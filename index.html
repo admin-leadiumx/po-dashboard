@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Persistent Offer — AI Call Dashboard</title>
+
+  <!-- CDN Dependencies -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+
+  <style>
+    /* ── Reset & Base ───────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0f172a;
+      --surface:   #1e293b;
+      --surface2:  #263348;
+      --border:    #334155;
+      --blue:      #3b82f6;
+      --blue-dim:  #1d4ed8;
+      --green:     #22c55e;
+      --red:       #ef4444;
+      --yellow:    #f59e0b;
+      --purple:    #a855f7;
+      --cyan:      #06b6d4;
+      --orange:    #f97316;
+      --text:      #f1f5f9;
+      --muted:     #94a3b8;
+      --radius:    10px;
+    }
+
+    html { font-size: 15px; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── Header ─────────────────────────────────────────────────── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 34px;
+      height: 34px;
+      background: var(--blue);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .brand-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-sub {
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-weight: 400;
+      display: block;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .refresh-badge {
+      font-size: 0.75rem;
+      color: var(--muted);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .refresh-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .last-updated {
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    /* ── Main Layout ─────────────────────────────────────────────── */
+    main {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px 20px 40px;
+    }
+
+    /* ── Loading / Error State ───────────────────────────────────── */
+    #state-overlay {
+      position: fixed;
+      inset: 60px 0 0 0;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid var(--border);
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .state-text {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .error-box {
+      background: var(--surface);
+      border: 1px solid var(--red);
+      border-radius: var(--radius);
+      padding: 28px 32px;
+      max-width: 560px;
+      text-align: center;
+    }
+
+    .error-box h2 {
+      color: var(--red);
+      margin-bottom: 10px;
+      font-size: 1.1rem;
+    }
+
+    .error-box p {
+      color: var(--muted);
+      font-size: 0.875rem;
+      margin-bottom: 16px;
+      line-height: 1.7;
+    }
+
+    .error-box ol {
+      text-align: left;
+      color: var(--muted);
+      font-size: 0.83rem;
+      padding-left: 20px;
+      line-height: 2;
+    }
+
+    .error-box .retry-btn {
+      margin-top: 18px;
+      background: var(--blue);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 20px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    .error-box .retry-btn:hover { background: var(--blue-dim); }
+
+    /* ── Section titles ─────────────────────────────────────────── */
+    .section-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      font-weight: 600;
+      margin: 28px 0 12px;
+    }
+
+    /* ── KPI Grid ───────────────────────────────────────────────── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 14px;
+    }
+
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--accent, var(--blue));
+      border-radius: var(--radius) var(--radius) 0 0;
+    }
+
+    .kpi-label {
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 600;
+    }
+
+    .kpi-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--text);
+      margin: 4px 0 2px;
+      line-height: 1.1;
+    }
+
+    .kpi-sub {
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    .kpi-icon {
+      position: absolute;
+      right: 16px;
+      top: 16px;
+      font-size: 1.4rem;
+      opacity: 0.25;
+    }
+
+    /* ── Charts Grid ────────────────────────────────────────────── */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 320px;
+      gap: 14px;
+    }
+
+    @media (max-width: 1100px) {
+      .charts-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .charts-grid .chart-card:nth-child(3) {
+        grid-column: span 2;
+        max-width: 380px;
+        margin: 0 auto;
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .charts-grid { grid-template-columns: 1fr; }
+      .charts-grid .chart-card:nth-child(3) {
+        grid-column: span 1;
+        max-width: 100%;
+      }
+    }
+
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+
+    .chart-card h3 {
+      font-size: 0.82rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .chart-wrap {
+      position: relative;
+      width: 100%;
+    }
+
+    /* ── Filters Row ────────────────────────────────────────────── */
+    .filters-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .filter-group label {
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+    }
+
+    .filter-group select,
+    .filter-group input[type="date"] {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 0.83rem;
+      outline: none;
+      min-width: 140px;
+    }
+
+    .filter-group select:focus,
+    .filter-group input[type="date"]:focus {
+      border-color: var(--blue);
+    }
+
+    .filter-group select option { background: var(--surface2); }
+
+    .clear-btn {
+      background: var(--surface2);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-size: 0.83rem;
+      cursor: pointer;
+      align-self: flex-end;
+    }
+
+    .clear-btn:hover { color: var(--text); border-color: var(--blue); }
+
+    /* ── Table ──────────────────────────────────────────────────── */
+    .table-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .table-header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .table-title {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .row-count {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .table-scroll { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+
+    thead th {
+      background: var(--bg);
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 0.7rem;
+      padding: 10px 16px;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    tbody tr {
+      border-top: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+
+    tbody tr:hover { background: var(--surface2); }
+
+    tbody td {
+      padding: 10px 16px;
+      vertical-align: middle;
+      color: var(--text);
+    }
+
+    /* Result badges */
+    .badge {
+      display: inline-block;
+      border-radius: 20px;
+      padding: 2px 10px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      white-space: nowrap;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .badge-dna        { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
+    .badge-dnc        { background: #450a0a; color: #ef4444; border: 1px solid #7f1d1d; }
+    .badge-call_later { background: #1c1917; color: #f59e0b; border: 1px solid #78350f; }
+    .badge-property_sold { background: #052e16; color: #4ade80; border: 1px solid #14532d; }
+    .badge-not_interested { background: #1c0a0a; color: #f87171; border: 1px solid #7f1d1d; }
+    .badge-interested { background: #0c1a4a; color: #93c5fd; border: 1px solid #1e3a8a; }
+    .badge-scheduled_appointment { background: #042f2e; color: #34d399; border: 1px solid #065f46; }
+
+    /* Direction badge */
+    .dir-badge {
+      font-size: 0.68rem;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .dir-inbound  { background: #1e3a5f; color: #60a5fa; }
+    .dir-outbound { background: #1a2e1a; color: #86efac; }
+
+    .transcript-cell {
+      max-width: 300px;
+    }
+
+    .transcript-short {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      color: var(--muted);
+      font-size: 0.78rem;
+      cursor: pointer;
+    }
+
+    .transcript-full {
+      color: var(--muted);
+      font-size: 0.78rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .expand-btn {
+      background: none;
+      border: none;
+      color: var(--blue);
+      font-size: 0.72rem;
+      cursor: pointer;
+      padding: 2px 0;
+      margin-top: 2px;
+      display: block;
+    }
+
+    .rec-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--blue);
+      font-size: 0.78rem;
+    }
+
+    /* ── Pagination ─────────────────────────────────────────────── */
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .page-info {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-right: 8px;
+    }
+
+    .page-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 5px;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.78rem;
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+
+    .page-btn:hover:not(:disabled) { background: var(--blue); border-color: var(--blue); }
+    .page-btn.active { background: var(--blue); border-color: var(--blue); }
+    .page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    /* ── Empty state ────────────────────────────────────────────── */
+    .empty-row td {
+      text-align: center;
+      color: var(--muted);
+      padding: 40px;
+      font-size: 0.875rem;
+    }
+
+    /* ── Modal (transcript) ─────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      max-width: 700px;
+      width: 100%;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-title { font-weight: 600; font-size: 0.95rem; }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 1.2rem;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .modal-close:hover { color: var(--text); }
+
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      font-size: 0.85rem;
+      color: var(--muted);
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.7;
+    }
+
+    /* ── Skeleton shimmer (for chart area while loading) ─────────── */
+    .skeleton {
+      background: linear-gradient(90deg, var(--surface) 25%, var(--surface2) 50%, var(--surface) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 6px;
+    }
+
+    @keyframes shimmer { to { background-position: -200% 0; } }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <div class="brand">
+    <div class="brand-icon">🏠</div>
+    <div>
+      <span class="brand-title">Persistent Offer</span>
+      <span class="brand-sub">AI Call Dashboard</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="last-updated" id="last-updated"></span>
+    <div class="refresh-badge">
+      <div class="refresh-dot"></div>
+      <span id="countdown">60s</span>
+    </div>
+  </div>
+</header>
+
+<!-- Loading / Error Overlay -->
+<div id="state-overlay">
+  <div class="spinner" id="spinner"></div>
+  <div class="state-text" id="state-text">Loading call data…</div>
+  <div class="error-box" id="error-box" style="display:none">
+    <h2>⚠️ Unable to Load Data</h2>
+    <p id="error-msg">Could not fetch data from the Google Sheet.</p>
+    <p>To fix this, make the sheet public:</p>
+    <ol>
+      <li>Open the Google Sheet</li>
+      <li>Click <strong>File → Share → Publish to web</strong></li>
+      <li>Set to <strong>Entire document → CSV</strong>, click <strong>Publish</strong></li>
+      <li>Also go to <strong>Share</strong> → <em>Anyone with the link → Viewer</em></li>
+    </ol>
+    <button class="retry-btn" onclick="loadData()">↺ Retry</button>
+  </div>
+</div>
+
+<!-- Dashboard -->
+<main id="dashboard" style="display:none">
+
+  <!-- KPI Row -->
+  <div class="section-title">Overview</div>
+  <div class="kpi-grid" id="kpi-grid">
+    <div class="kpi-card" style="--accent: var(--blue)">
+      <span class="kpi-icon">📞</span>
+      <div class="kpi-label">Total Calls</div>
+      <div class="kpi-value" id="kpi-total">—</div>
+      <div class="kpi-sub">AI calls made</div>
+    </div>
+    <div class="kpi-card" style="--accent: var(--green)">
+      <span class="kpi-icon">✅</span>
+      <div class="kpi-label">Answered</div>
+      <div class="kpi-value" id="kpi-answered">—</div>
+      <div class="kpi-sub" id="kpi-answered-sub">vs unanswered</div>
+    </div>
+    <div class="kpi-card" style="--accent: #34d399">
+      <span class="kpi-icon">📅</span>
+      <div class="kpi-label">Appts Booked</div>
+      <div class="kpi-value" id="kpi-appts">—</div>
+      <div class="kpi-sub">Scheduled Appointment</div>
+    </div>
+    <div class="kpi-card" style="--accent: var(--red)">
+      <span class="kpi-icon">🚫</span>
+      <div class="kpi-label">Not Int. + DNC</div>
+      <div class="kpi-value" id="kpi-negative">—</div>
+      <div class="kpi-sub">Not Interested + DNC</div>
+    </div>
+    <div class="kpi-card" style="--accent: var(--cyan)">
+      <span class="kpi-icon">🎙️</span>
+      <div class="kpi-label">Recordings</div>
+      <div class="kpi-value" id="kpi-recordings">—</div>
+      <div class="kpi-sub">Available</div>
+    </div>
+    <div class="kpi-card" style="--accent: var(--purple)">
+      <span class="kpi-icon">⏱️</span>
+      <div class="kpi-label">Avg Duration</div>
+      <div class="kpi-value" id="kpi-avgdur">—</div>
+      <div class="kpi-sub">mm:ss average</div>
+    </div>
+    <div class="kpi-card" style="--accent: var(--yellow)">
+      <span class="kpi-icon">🔁</span>
+      <div class="kpi-label">Follow-ups</div>
+      <div class="kpi-value" id="kpi-followups">—</div>
+      <div class="kpi-sub">Call Later</div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="section-title">Analytics</div>
+  <div class="charts-grid">
+    <div class="chart-card">
+      <h3>Calls by Result</h3>
+      <div class="chart-wrap"><canvas id="chart-results" height="220"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>Calls per Day</h3>
+      <div class="chart-wrap"><canvas id="chart-daily" height="220"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>Answered vs Unanswered</h3>
+      <div class="chart-wrap" style="max-width:260px; margin:0 auto;">
+        <canvas id="chart-donut" height="220"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="section-title">Call Log</div>
+
+  <!-- Filters -->
+  <div class="filters-row" style="margin-bottom:12px">
+    <div class="filter-group">
+      <label>Result</label>
+      <select id="filter-result">
+        <option value="">All Results</option>
+        <option value="DNA">DNA</option>
+        <option value="DNC">DNC</option>
+        <option value="Call_later">Call Later</option>
+        <option value="Property Sold">Property Sold</option>
+        <option value="Not Interested">Not Interested</option>
+        <option value="Interested">Interested</option>
+        <option value="Scheduled Appointment">Scheduled Appointment</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Date From</label>
+      <input type="date" id="filter-date-from" />
+    </div>
+    <div class="filter-group">
+      <label>Date To</label>
+      <input type="date" id="filter-date-to" />
+    </div>
+    <button class="clear-btn" onclick="clearFilters()">✕ Clear</button>
+  </div>
+
+  <div class="table-card">
+    <div class="table-header-bar">
+      <span class="table-title">Recent Calls</span>
+      <span class="row-count" id="row-count"></span>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Phone</th>
+            <th>Direction</th>
+            <th>Duration</th>
+            <th>Result</th>
+            <th>Recording</th>
+            <th>Transcript</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+
+</main>
+
+<!-- Transcript Modal -->
+<div class="modal-overlay" id="modal" style="display:none" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">Transcript</span>
+      <button class="modal-close" onclick="document.getElementById('modal').style.display='none'">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+/* ─────────────────────────────────────────────
+   CONFIG
+───────────────────────────────────────────── */
+const SHEET_ID  = '1ngIe_4lZPgIWQSsP_BzjNKWG1yU3MN84EGvjTDMFCcU';
+const CSV_URL   = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`;
+const REFRESH_S = 60;
+const PAGE_SIZE = 20;
+
+/* ─────────────────────────────────────────────
+   STATE
+───────────────────────────────────────────── */
+let allRows      = [];
+let filteredRows = [];
+let currentPage  = 1;
+let countdown    = REFRESH_S;
+let countdownTimer;
+let charts       = {};
+
+/* ─────────────────────────────────────────────
+   HELPERS
+───────────────────────────────────────────── */
+const $ = id => document.getElementById(id);
+
+function fmtDuration(sec) {
+  const s = parseInt(sec, 10);
+  if (isNaN(s)) return '—';
+  const m = Math.floor(s / 60);
+  const ss = String(s % 60).padStart(2, '0');
+  return `${m}:${ss}`;
+}
+
+function fmtDate(raw) {
+  if (!raw) return '—';
+  // try to parse; show local date
+  const d = new Date(raw);
+  if (isNaN(d)) return raw;
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function toISODate(raw) {
+  if (!raw) return '';
+  const d = new Date(raw);
+  if (isNaN(d)) return '';
+  return d.toISOString().slice(0, 10);
+}
+
+function resultKey(r) {
+  return (r || '').toLowerCase().replace(/\s+/g, '_').replace(/[^a-z_]/g, '');
+}
+
+function badgeHtml(result) {
+  const cls = 'badge badge-' + resultKey(result);
+  const label = (result || '—').replace(/_/g, ' ');
+  return `<span class="${cls}">${label}</span>`;
+}
+
+function dirBadge(dir) {
+  if (!dir) return '—';
+  const cls = 'dir-badge dir-' + dir.toLowerCase();
+  return `<span class="${cls}">${dir}</span>`;
+}
+
+function isDNA(row) {
+  return (row.result || '').trim().toUpperCase() === 'DNA';
+}
+
+/* ─────────────────────────────────────────────
+   CHARTS
+───────────────────────────────────────────── */
+const CHART_COLORS = {
+  dna:                   '#94a3b8',
+  dnc:                   '#ef4444',
+  call_later:            '#f59e0b',
+  property_sold:         '#4ade80',
+  not_interested:        '#f87171',
+  interested:            '#60a5fa',
+  scheduled_appointment: '#34d399',
+};
+
+function getResultColor(r) {
+  return CHART_COLORS[resultKey(r)] || '#6366f1';
+}
+
+function buildResultChart(rows) {
+  const counts = {};
+  rows.forEach(r => {
+    const k = (r.result || 'Unknown').trim();
+    counts[k] = (counts[k] || 0) + 1;
+  });
+  const labels = Object.keys(counts);
+  const data   = Object.values(counts);
+  const colors = labels.map(getResultColor);
+
+  if (charts.results) charts.results.destroy();
+  charts.results = new Chart($('chart-results'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        backgroundColor: colors,
+        borderRadius: 5,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: { callbacks: {
+        label: ctx => ` ${ctx.parsed.y} calls`
+      }}},
+      scales: {
+        x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: '#1e293b' } },
+        y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: '#334155' }, beginAtZero: true }
+      }
+    }
+  });
+}
+
+function buildDailyChart(rows) {
+  const counts = {};
+  rows.forEach(r => {
+    const d = toISODate(r.date);
+    if (d) counts[d] = (counts[d] || 0) + 1;
+  });
+  const sorted = Object.keys(counts).sort();
+  const data   = sorted.map(d => counts[d]);
+
+  if (charts.daily) charts.daily.destroy();
+  charts.daily = new Chart($('chart-daily'), {
+    type: 'line',
+    data: {
+      labels: sorted,
+      datasets: [{
+        data,
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59,130,246,0.12)',
+        tension: 0.3,
+        fill: true,
+        pointBackgroundColor: '#3b82f6',
+        pointRadius: 3,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: { callbacks: {
+        label: ctx => ` ${ctx.parsed.y} calls`
+      }}},
+      scales: {
+        x: { ticks: { color: '#94a3b8', font: { size: 10 }, maxRotation: 45 }, grid: { color: '#1e293b' } },
+        y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: '#334155' }, beginAtZero: true }
+      }
+    }
+  });
+}
+
+function buildDonutChart(rows) {
+  const unanswered = rows.filter(isDNA).length;
+  const answered   = rows.length - unanswered;
+
+  if (charts.donut) charts.donut.destroy();
+  charts.donut = new Chart($('chart-donut'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Answered', 'Unanswered (DNA)'],
+      datasets: [{
+        data: [answered, unanswered],
+        backgroundColor: ['#22c55e', '#ef4444'],
+        borderColor: '#1e293b',
+        borderWidth: 3,
+        hoverOffset: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      cutout: '65%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { color: '#94a3b8', font: { size: 11 }, padding: 14 }
+        },
+        tooltip: { callbacks: {
+          label: ctx => ` ${ctx.label}: ${ctx.parsed} (${rows.length ? Math.round(ctx.parsed/rows.length*100) : 0}%)`
+        }}
+      }
+    }
+  });
+}
+
+/* ─────────────────────────────────────────────
+   KPI UPDATE
+───────────────────────────────────────────── */
+function updateKPIs(rows) {
+  const total       = rows.length;
+  const unanswered  = rows.filter(isDNA).length;
+  const answered    = total - unanswered;
+  const appts       = rows.filter(r => (r.result||'').trim() === 'Scheduled Appointment').length;
+  const negative    = rows.filter(r => ['Not Interested','DNC'].includes((r.result||'').trim())).length;
+  const recordings  = rows.filter(r => r.recording && r.recording.trim()).length;
+  const durations   = rows.map(r => parseInt(r.duration, 10)).filter(n => !isNaN(n) && n > 0);
+  const avgDur      = durations.length ? Math.round(durations.reduce((a,b)=>a+b,0) / durations.length) : 0;
+  const followups   = rows.filter(r => (r.result||'').trim() === 'Call_later').length;
+
+  $('kpi-total').textContent      = total.toLocaleString();
+  $('kpi-answered').textContent   = answered.toLocaleString();
+  $('kpi-answered-sub').textContent = `${unanswered.toLocaleString()} unanswered`;
+  $('kpi-appts').textContent      = appts.toLocaleString();
+  $('kpi-negative').textContent   = negative.toLocaleString();
+  $('kpi-recordings').textContent = recordings.toLocaleString();
+  $('kpi-avgdur').textContent     = fmtDuration(avgDur);
+  $('kpi-followups').textContent  = followups.toLocaleString();
+}
+
+/* ─────────────────────────────────────────────
+   TABLE
+───────────────────────────────────────────── */
+function applyFilters() {
+  const resFilter  = $('filter-result').value;
+  const dateFrom   = $('filter-date-from').value;
+  const dateTo     = $('filter-date-to').value;
+
+  filteredRows = allRows.filter(r => {
+    if (resFilter && (r.result || '').trim() !== resFilter) return false;
+    const d = toISODate(r.date);
+    if (dateFrom && d && d < dateFrom) return false;
+    if (dateTo   && d && d > dateTo)   return false;
+    return true;
+  });
+
+  currentPage = 1;
+  renderTable();
+}
+
+function clearFilters() {
+  $('filter-result').value    = '';
+  $('filter-date-from').value = '';
+  $('filter-date-to').value   = '';
+  applyFilters();
+}
+
+function renderTable() {
+  const total = filteredRows.length;
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  currentPage = Math.min(currentPage, pages);
+
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const slice = filteredRows.slice(start, start + PAGE_SIZE);
+
+  $('row-count').textContent = `${total.toLocaleString()} row${total !== 1 ? 's' : ''}`;
+
+  const tbody = $('table-body');
+  if (slice.length === 0) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="7">No calls match the current filters.</td></tr>`;
+  } else {
+    tbody.innerHTML = slice.map((r, i) => {
+      const absIdx = start + i;
+      const recHtml = r.recording && r.recording.trim()
+        ? `<a class="rec-link" href="${r.recording.trim()}" target="_blank" rel="noopener">🎙️ Play</a>`
+        : '<span style="color:var(--muted);font-size:0.75rem">—</span>';
+
+      const transcriptTrunc = (r.transcript || '').trim().slice(0, 120);
+      const hasFull = (r.transcript || '').trim().length > 120;
+      const transcriptHtml = r.transcript
+        ? `<span class="transcript-short">${escHtml(transcriptTrunc)}${hasFull ? '…' : ''}</span>
+           ${hasFull ? `<button class="expand-btn" onclick="openModal(${absIdx})">Expand ↗</button>` : ''}`
+        : '<span style="color:var(--muted);font-size:0.75rem">—</span>';
+
+      return `<tr>
+        <td style="white-space:nowrap">${fmtDate(r.date)}</td>
+        <td style="font-family:monospace;font-size:0.8rem">${escHtml(r.phone || '—')}</td>
+        <td>${dirBadge(r.direction)}</td>
+        <td style="font-variant-numeric:tabular-nums">${fmtDuration(r.duration)}</td>
+        <td>${badgeHtml((r.result || '').trim())}</td>
+        <td>${recHtml}</td>
+        <td class="transcript-cell">${transcriptHtml}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  renderPagination(pages);
+}
+
+function renderPagination(pages) {
+  const container = $('pagination');
+  if (pages <= 1) { container.innerHTML = ''; return; }
+
+  const cur = currentPage;
+  let html = `<span class="page-info">Page ${cur} of ${pages}</span>`;
+
+  // Prev
+  html += `<button class="page-btn" onclick="goPage(${cur-1})" ${cur===1?'disabled':''}>‹</button>`;
+
+  // Page numbers (window of 5)
+  const window = 5;
+  let lo = Math.max(1, cur - Math.floor(window/2));
+  let hi = Math.min(pages, lo + window - 1);
+  lo = Math.max(1, hi - window + 1);
+
+  if (lo > 1) html += `<button class="page-btn" onclick="goPage(1)">1</button>${lo>2?'<span style="color:var(--muted);font-size:.75rem;padding:0 2px">…</span>':''}`;
+  for (let p = lo; p <= hi; p++) {
+    html += `<button class="page-btn ${p===cur?'active':''}" onclick="goPage(${p})">${p}</button>`;
+  }
+  if (hi < pages) html += `${hi<pages-1?'<span style="color:var(--muted);font-size:.75rem;padding:0 2px">…</span>':''}<button class="page-btn" onclick="goPage(${pages})">${pages}</button>`;
+
+  html += `<button class="page-btn" onclick="goPage(${cur+1})" ${cur===pages?'disabled':''}>›</button>`;
+  container.innerHTML = html;
+}
+
+function goPage(p) {
+  currentPage = p;
+  renderTable();
+  document.querySelector('.table-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ─────────────────────────────────────────────
+   MODAL
+───────────────────────────────────────────── */
+function openModal(idx) {
+  const row = filteredRows[idx];
+  if (!row) return;
+  $('modal-title').textContent = `Transcript — ${row.phone || ''} (${fmtDate(row.date)})`;
+  $('modal-body').textContent  = (row.transcript || '').trim() || '(No transcript available)';
+  $('modal').style.display = 'flex';
+}
+
+function closeModal(e) {
+  if (e.target === $('modal')) $('modal').style.display = 'none';
+}
+
+/* ─────────────────────────────────────────────
+   DATA LOAD
+───────────────────────────────────────────── */
+function showLoading() {
+  $('spinner').style.display    = 'block';
+  $('state-text').style.display = 'block';
+  $('error-box').style.display  = 'none';
+  $('state-overlay').style.display = 'flex';
+  $('dashboard').style.display  = 'none';
+}
+
+function showError(msg) {
+  $('spinner').style.display    = 'none';
+  $('state-text').style.display = 'none';
+  $('error-box').style.display  = 'block';
+  $('error-msg').textContent    = msg;
+  $('state-overlay').style.display = 'flex';
+}
+
+function showDashboard() {
+  $('state-overlay').style.display = 'none';
+  $('dashboard').style.display     = 'block';
+}
+
+async function loadData() {
+  showLoading();
+  try {
+    // PapaParse with remote URL
+    const result = await new Promise((resolve, reject) => {
+      Papa.parse(CSV_URL, {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        complete: resolve,
+        error: reject,
+      });
+    });
+
+    if (!result || !result.data || result.data.length === 0) {
+      showError('The sheet returned no rows. Make sure it is published publicly and has data.');
+      return;
+    }
+
+    // Normalize column names (lowercase, trim)
+    allRows = result.data.map(row => {
+      const norm = {};
+      Object.keys(row).forEach(k => {
+        norm[k.trim().toLowerCase()] = (row[k] || '').trim();
+      });
+      return norm;
+    });
+
+    // Sort descending by date
+    allRows.sort((a, b) => {
+      const da = new Date(a.date), db = new Date(b.date);
+      return (isNaN(da) ? 0 : da) > (isNaN(db) ? 0 : db) ? -1 : 1;
+    });
+
+    filteredRows = [...allRows];
+    updateKPIs(allRows);
+    buildResultChart(allRows);
+    buildDailyChart(allRows);
+    buildDonutChart(allRows);
+    renderTable();
+
+    const now = new Date();
+    $('last-updated').textContent = `Updated ${now.toLocaleTimeString()}`;
+
+    showDashboard();
+
+  } catch (err) {
+    console.error('Dashboard load error:', err);
+    const msg = err && err.message ? err.message : String(err);
+    if (msg.includes('NetworkError') || msg.includes('Failed to fetch') || msg.includes('CORS')) {
+      showError('Network error — the Google Sheet may not be public. See instructions below.');
+    } else {
+      showError(`Error: ${msg}`);
+    }
+  }
+}
+
+/* ─────────────────────────────────────────────
+   AUTO-REFRESH COUNTDOWN
+───────────────────────────────────────────── */
+function startCountdown() {
+  clearInterval(countdownTimer);
+  countdown = REFRESH_S;
+  $('countdown').textContent = countdown + 's';
+
+  countdownTimer = setInterval(() => {
+    countdown--;
+    $('countdown').textContent = countdown + 's';
+    if (countdown <= 0) {
+      clearInterval(countdownTimer);
+      loadData().then(() => startCountdown());
+    }
+  }, 1000);
+}
+
+/* ─────────────────────────────────────────────
+   FILTER LISTENERS
+───────────────────────────────────────────── */
+$('filter-result').addEventListener('change', applyFilters);
+$('filter-date-from').addEventListener('change', applyFilters);
+$('filter-date-to').addEventListener('change', applyFilters);
+
+/* ─────────────────────────────────────────────
+   CHART.JS GLOBAL DEFAULTS
+───────────────────────────────────────────── */
+Chart.defaults.color = '#94a3b8';
+Chart.defaults.borderColor = '#334155';
+Chart.defaults.font.family = "'Segoe UI', system-ui, sans-serif";
+
+/* ─────────────────────────────────────────────
+   BOOT
+───────────────────────────────────────────── */
+loadData().then(() => startCountdown());
+</script>
+</body>
+</html>
