@@ -746,6 +746,10 @@
       <label>Date To</label>
       <input type="date" id="filter-date-to" />
     </div>
+    <div class="filter-group">
+      <label>Phone</label>
+      <input type="text" id="filter-phone" placeholder="Search phone..." style="width:150px" />
+    </div>
     <button class="clear-btn" onclick="clearFilters()">✕ Clear</button>
   </div>
 
@@ -773,6 +777,32 @@
     <div class="pagination" id="pagination"></div>
   </div>
 
+  <!-- Lead Attempts Section -->
+  <div class="section-title" style="margin-top:32px">Call Attempts by Lead</div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <div style="padding:12px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)">
+      <input type="text" id="lead-search" placeholder="Filter by phone..." style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;width:200px" />
+      <span id="lead-count" style="color:var(--muted);font-size:13px"></span>
+    </div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="background:var(--surface2)">
+            <th style="padding:10px 16px;text-align:left;color:var(--muted);font-weight:500">Phone</th>
+            <th style="padding:10px 16px;text-align:center;color:var(--muted);font-weight:500">Total Attempts</th>
+            <th style="padding:10px 16px;text-align:center;color:var(--muted);font-weight:500">Answered</th>
+            <th style="padding:10px 16px;text-align:center;color:var(--muted);font-weight:500">DNA</th>
+            <th style="padding:10px 16px;text-align:center;color:var(--muted);font-weight:500">Booked</th>
+            <th style="padding:10px 16px;text-align:center;color:var(--muted);font-weight:500">DNC</th>
+            <th style="padding:10px 16px;text-align:left;color:var(--muted);font-weight:500">Last Result</th>
+            <th style="padding:10px 16px;text-align:left;color:var(--muted);font-weight:500">Last Call</th>
+          </tr>
+        </thead>
+        <tbody id="lead-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
 </main>
 
 <!-- Transcript Modal -->
@@ -793,7 +823,7 @@
 const SHEET_ID  = '1ngIe_4lZPgIWQSsP_BzjNKWG1yU3MN84EGvjTDMFCcU';
 const CSV_URL   = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`;
 const REFRESH_S = 60;
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 25;
 
 /* ─────────────────────────────────────────────
    STATE
@@ -818,19 +848,21 @@ function fmtDuration(sec) {
   return `${m}:${ss}`;
 }
 
+const TZ = 'America/Chicago';
+
 function fmtDate(raw) {
   if (!raw) return '—';
-  // try to parse; show local date
   const d = new Date(raw);
   if (isNaN(d)) return raw;
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: TZ });
 }
 
 function toISODate(raw) {
   if (!raw) return '';
   const d = new Date(raw);
   if (isNaN(d)) return '';
-  return d.toISOString().slice(0, 10);
+  // Get date in Chicago timezone
+  return new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
 }
 
 function resultKey(r) {
@@ -1003,15 +1035,20 @@ function updateKPIs(rows) {
    TABLE
 ───────────────────────────────────────────── */
 function applyFilters() {
-  const resFilter  = $('filter-result').value;
-  const dateFrom   = $('filter-date-from').value;
-  const dateTo     = $('filter-date-to').value;
+  const resFilter   = $('filter-result').value;
+  const dateFrom    = $('filter-date-from').value;
+  const dateTo      = $('filter-date-to').value;
+  const phoneFilter = $('filter-phone').value.trim().replace(/\D/g, '');
 
   filteredRows = allRows.filter(r => {
     if (resFilter && (r.result || '').trim() !== resFilter) return false;
     const d = toISODate(r.date);
     if (dateFrom && d && d < dateFrom) return false;
     if (dateTo   && d && d > dateTo)   return false;
+    if (phoneFilter) {
+      const rowPhone = (r.phone || '').replace(/\D/g, '');
+      if (!rowPhone.includes(phoneFilter)) return false;
+    }
     return true;
   });
 
@@ -1023,7 +1060,68 @@ function clearFilters() {
   $('filter-result').value    = '';
   $('filter-date-from').value = '';
   $('filter-date-to').value   = '';
+  $('filter-phone').value     = '';
   applyFilters();
+}
+
+function renderLeadAttempts(rows) {
+  // Aggregate by phone
+  const map = {};
+  rows.forEach(r => {
+    const phone = (r.phone || '').trim();
+    if (!phone) return;
+    if (!map[phone]) map[phone] = { phone, total: 0, answered: 0, dna: 0, booked: 0, dnc: 0, lastResult: '', lastDate: '' };
+    const m = map[phone];
+    m.total++;
+    const res = (r.result || '').trim();
+    if (isDNA(r)) m.dna++; else m.answered++;
+    if (res === 'Scheduled Appointment') m.booked++;
+    if (res === 'DNC') m.dnc++;
+    // Track latest
+    const d = toISODate(r.date);
+    if (!m.lastDate || d > m.lastDate) { m.lastDate = d; m.lastResult = res; m.lastRaw = r.date; }
+  });
+
+  let leads = Object.values(map).sort((a,b) => b.total - a.total);
+  $('lead-count').textContent = `${leads.length} unique leads`;
+
+  const searchInput = $('lead-search');
+  function filterLeads() {
+    const q = searchInput.value.trim().replace(/\D/g,'');
+    const filtered = q ? leads.filter(l => l.phone.replace(/\D/g,'').includes(q)) : leads;
+    $('lead-count').textContent = `${filtered.length} of ${leads.length} leads`;
+    renderLeadRows(filtered);
+  }
+  searchInput.addEventListener('input', filterLeads);
+  renderLeadRows(leads);
+}
+
+function renderLeadRows(leads) {
+  const RESULT_COLORS = {
+    'Scheduled Appointment': '#22c55e',
+    'Interested': '#3b82f6',
+    'Call_later': '#f59e0b',
+    'Not Interested': '#ef4444',
+    'DNC': '#dc2626',
+    'Property Sold': '#8b5cf6',
+    'DNA': '#6b7280'
+  };
+  const tbody = $('lead-table-body');
+  if (!leads.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--muted)">No leads found</td></tr>'; return; }
+  tbody.innerHTML = leads.map(l => {
+    const color = RESULT_COLORS[l.lastResult] || 'var(--muted)';
+    const lastDate = l.lastRaw ? fmtDate(l.lastRaw) : '—';
+    return `<tr style="border-top:1px solid var(--border);">
+      <td style="padding:10px 16px;font-family:monospace">${l.phone}</td>
+      <td style="padding:10px 16px;text-align:center;font-weight:600;color:var(--accent)">${l.total}</td>
+      <td style="padding:10px 16px;text-align:center;color:#22c55e">${l.answered}</td>
+      <td style="padding:10px 16px;text-align:center;color:#6b7280">${l.dna}</td>
+      <td style="padding:10px 16px;text-align:center;color:#22c55e">${l.booked}</td>
+      <td style="padding:10px 16px;text-align:center;color:#dc2626">${l.dnc}</td>
+      <td style="padding:10px 16px"><span style="background:${color}22;color:${color};padding:2px 8px;border-radius:4px;font-size:12px">${l.lastResult || '—'}</span></td>
+      <td style="padding:10px 16px;color:var(--muted);white-space:nowrap">${lastDate}</td>
+    </tr>`;
+  }).join('');
 }
 
 function renderTable() {
@@ -1042,8 +1140,11 @@ function renderTable() {
   } else {
     tbody.innerHTML = slice.map((r, i) => {
       const absIdx = start + i;
-      const recHtml = r.recording && r.recording.trim()
-        ? `<a class="rec-link" href="${r.recording.trim()}" target="_blank" rel="noopener">🎙️ Play</a>`
+      const recUrl = r.recording && r.recording.trim() ? r.recording.trim() : '';
+      const recHtml = recUrl
+        ? `<button onclick="openAudioPlayer('${recUrl.replace(/'/g, "\'")}')"
+             style="background:var(--accent,#3b82f6);border:none;color:#fff;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:12px">
+             ▶ Play</button>`
         : '<span style="color:var(--muted);font-size:0.75rem">—</span>';
 
       const transcriptTrunc = (r.transcript || '').trim().slice(0, 120);
@@ -1183,6 +1284,7 @@ async function loadData() {
     buildDailyChart(allRows);
     buildDonutChart(allRows);
     renderTable();
+    renderLeadAttempts(allRows);
 
     const now = new Date();
     $('last-updated').textContent = `Updated ${now.toLocaleTimeString()}`;
@@ -1224,6 +1326,7 @@ function startCountdown() {
 $('filter-result').addEventListener('change', applyFilters);
 $('filter-date-from').addEventListener('change', applyFilters);
 $('filter-date-to').addEventListener('change', applyFilters);
+$('filter-phone').addEventListener('input', applyFilters);
 
 /* ─────────────────────────────────────────────
    CHART.JS GLOBAL DEFAULTS
@@ -1236,6 +1339,50 @@ Chart.defaults.font.family = "'Segoe UI', system-ui, sans-serif";
    BOOT
 ───────────────────────────────────────────── */
 loadData().then(() => startCountdown());
+</script>
+
+<!-- Audio Player Modal -->
+<div id="audio-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:24px;min-width:340px;max-width:480px;width:90%">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <span style="color:#f8fafc;font-weight:600;font-size:15px">🎙️ Call Recording</span>
+      <button onclick="closeAudioPlayer()" style="background:none;border:none;color:#94a3b8;font-size:20px;cursor:pointer;line-height:1">&times;</button>
+    </div>
+    <audio id="audio-player" controls style="width:100%;border-radius:8px;outline:none;accent-color:#3b82f6">
+      Your browser does not support audio.
+    </audio>
+    <p id="audio-error" style="display:none;color:#ef4444;font-size:12px;margin-top:8px;text-align:center"></p>
+    <div style="margin-top:12px;text-align:center">
+      <a id="audio-download" href="#" download style="color:#3b82f6;font-size:12px;text-decoration:none">⬇ Download recording</a>
+    </div>
+  </div>
+</div>
+<script>
+function openAudioPlayer(url) {
+  const modal = document.getElementById('audio-modal');
+  const player = document.getElementById('audio-player');
+  const errEl = document.getElementById('audio-error');
+  const dlLink = document.getElementById('audio-download');
+  player.src = url;
+  dlLink.href = url;
+  errEl.style.display = 'none';
+  player.onerror = () => {
+    errEl.textContent = 'Could not load audio. Try downloading instead.';
+    errEl.style.display = 'block';
+  };
+  modal.style.display = 'flex';
+  player.play().catch(() => {});
+}
+function closeAudioPlayer() {
+  const modal = document.getElementById('audio-modal');
+  const player = document.getElementById('audio-player');
+  player.pause();
+  player.src = '';
+  modal.style.display = 'none';
+}
+document.getElementById('audio-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeAudioPlayer();
+});
 </script>
 </body>
 </html>
