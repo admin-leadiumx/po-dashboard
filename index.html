@@ -965,8 +965,8 @@ function startCD(){
 /* ── LISTENERS ── */
 const df=dbn(applyFilters,150);
 $('fRes').addEventListener('change',applyFilters);
-$('fFrom').addEventListener('change',applyFilters);
-$('fTo').addEventListener('change',applyFilters);
+if($('fFrom'))$('fFrom').addEventListener('change',applyFilters);
+if($('fTo'))$('fTo').addEventListener('change',applyFilters);
 $('fPhone').addEventListener('input',df);
 loadData().then(startCD);
 </script>
