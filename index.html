@@ -233,10 +233,10 @@
 
   <!-- Quick ranges -->
   <div class="ranges" id="qr" style="margin-top:4px">
-    <button class="pill" onclick="setRange('today')">Today</button>
+    <button class="pill on" onclick="setRange('today')">Today</button>
     <button class="pill" onclick="setRange('7d')">Last 7 Days</button>
     <button class="pill" onclick="setRange('30d')">Last 30 Days</button>
-    <button class="pill on" onclick="setRange('all')">All Time</button>
+    <button class="pill" onclick="setRange('all')">All Time</button>
   </div>
 
   <!-- KPIs -->
@@ -497,9 +497,58 @@ function openDetail(r){
   let html=fields.map(f=>`<div class="detail-field"><label>${f.l}</label><span>${f.v}</span></div>`).join('');
   if(r.recording){html+=`<div class="detail-audio"><audio controls style="width:100%;accent-color:#3b82f6;margin-top:4px" src="${esc(r.recording)}">No audio support.</audio><div style="margin-top:6px"><a href="${esc(r.recording)}" download style="color:#3b82f6;font-size:.75rem">⬇ Download recording</a></div></div>`;}
   html+=`<div class="detail-transcript"><label>📝 Full Transcript</label><pre>${esc((r.transcript||'').trim()||'(No transcript available)')}</pre></div>`;
-  $('detailBody').innerHTML=html;
+  // GHL button
+  const ghlBtn=`<div class="detail-audio" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <button id="ghlBtn" onclick="openInGHL('${esc(r.phone||'')}',this)" style="background:#7c3aed;border:none;color:#fff;border-radius:6px;padding:7px 16px;cursor:pointer;font-size:.82rem;font-weight:600;display:flex;align-items:center;gap:6px">
+      <span>🔗</span><span>View in GHL</span>
+    </button>
+    <span id="ghlStatus" style="font-size:.75rem;color:#94a3b8"></span>
+  </div>`;
+  $('detailBody').innerHTML=html+ghlBtn;
   $('detailOver').style.display='flex';
 }
+/* ── GHL INTEGRATION ── */
+const GHL_API_KEY = window.GHL_API_KEY || '';
+const GHL_LOCATION_ID = window.GHL_LOCATION_ID || '';
+const GHL_BASE_URL = 'https://app.gohighlevel.com/v2/location/GHL_LOC/contacts/detail/';
+
+async function openInGHL(phone, btn){
+  if(!GHL_API_KEY||!GHL_LOCATION_ID){
+    const status=document.getElementById('ghlStatus');
+    status.textContent='⚠ GHL API key / Location ID not configured';
+    status.style.color='#f59e0b';
+    return;
+  }
+  const status=document.getElementById('ghlStatus');
+  const originalHtml=btn.innerHTML;
+  btn.innerHTML='<span class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block"></span> Searching…';
+  btn.disabled=true;
+  status.textContent='';
+  try{
+    const clean=phone.replace(/\D/g,'');
+    const res=await fetch(`https://services.leadconnectorhq.com/contacts/?locationId=${GHL_LOCATION_ID}&query=${encodeURIComponent(clean)}`,{
+      headers:{'Authorization':`Bearer ${GHL_API_KEY}`,'Version':'2021-07-28','Content-Type':'application/json'}
+    });
+    const data=await res.json();
+    const contacts=data.contacts||data.data||[];
+    if(!contacts.length){
+      status.textContent='No contact found in GHL for this number';
+      status.style.color='#f87171';
+    } else {
+      const contact=contacts[0];
+      const url=`https://app.gohighlevel.com/v2/location/${GHL_LOCATION_ID}/contacts/detail/${contact.id}`;
+      window.open(url,'_blank');
+      status.textContent=`✓ Opened: ${contact.firstName||''} ${contact.lastName||''}`.trim();
+      status.style.color='#22c55e';
+    }
+  }catch(e){
+    status.textContent='Error: '+e.message;
+    status.style.color='#f87171';
+  }
+  btn.innerHTML=originalHtml;
+  btn.disabled=false;
+}
+
 function closeDetail(){
   $('detailOver').style.display='none';
   // Stop any playing audio
@@ -707,7 +756,7 @@ function sortBy(f){
 
 /* ── FILTERS ── */
 function setRange(r){
-  document.querySelectorAll('.pill').forEach(p=>p.classList.toggle('on',p.onclick.toString().includes(`'${r}'`)));
+  document.querySelectorAll('.pill').forEach(p=>p.classList.toggle('on',p.getAttribute('onclick').includes(`'${r}'`)));
   const now=new Date();let from='',to='';
   if(r==='today'){from=to=toISO(now.toISOString());}
   else if(r==='7d'){const d=new Date(now);d.setDate(d.getDate()-7);from=toISO(d.toISOString());}
