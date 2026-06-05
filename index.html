@@ -715,26 +715,35 @@ function renderPag(pages){
 function goPage(p){page=p;renderTable();document.querySelector('.tcard').scrollIntoView({behavior:'smooth',block:'start'});}
 
 /* ── LEAD TABLE ── */
+const LEAD_PAGE=50;
+let leadOffset=0;
+
 function renderLeads(rows){
-  const COLS={'Scheduled Appointment':'#22c55e','Interested':'#3b82f6','Call_later':'#f59e0b','Not Interested':'#ef4444','DNC':'#dc2626','Property Sold':'#a855f7','DNA':'#6b7280'};
+  leadOffset=0;
   $('lCount').textContent=`${leadsData.length} unique leads`;
   const si=$('leadSearch');
   function filter(){
     const q=si.value.trim().replace(/\D/g,'');
     const data=q?leadsData.filter(l=>l.phone.replace(/\D/g,'').includes(q)):leadsData;
     $('lCount').textContent=`${data.length} of ${leadsData.length} leads`;
-    draw(data);
+    leadOffset=0;
+    draw(data, true);
   }
   si.oninput=dbn(filter,150);
-  draw(leadsData);
+  draw(leadsData, true);
 }
 
-function draw(data){
+let _currentLeadData=[];
+
+function draw(data, reset=false){
   const COLS={'Scheduled Appointment':'#22c55e','Interested':'#3b82f6','Call_later':'#f59e0b','Not Interested':'#ef4444','DNC':'#dc2626','Property Sold':'#a855f7','DNA':'#6b7280'};
+  _currentLeadData=data;
+  if(reset)leadOffset=0;
   const tbody=$('ltbody');
-  if(!data.length){tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--muted)">No leads</td></tr>';return;}
+  if(!data.length){tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--muted)">No leads</td></tr>';$('lCount').textContent='0 leads';return;}
+  const slice=data.slice(0, leadOffset+LEAD_PAGE);
   const frag=document.createDocumentFragment();
-  data.forEach(l=>{
+  slice.forEach(l=>{
     const col=COLS[l.lastResult]||'var(--muted)';
     const tr=document.createElement('tr');
     tr.style.cssText=`border-top:1px solid var(--border)${l.hasDNCViol?';background:rgba(239,68,68,.04)':''}`;
@@ -742,6 +751,19 @@ function draw(data){
     frag.appendChild(tr);
   });
   tbody.innerHTML=''; tbody.appendChild(frag);
+  leadOffset=slice.length;
+  // Show load-more button if more data exists
+  const remaining=data.length-slice.length;
+  $('lCount').textContent=`Showing ${slice.length} of ${data.length} leads${remaining>0?' — scroll for more':''}`;
+  if(remaining>0){
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td colspan="9" style="text-align:center;padding:12px"><button onclick="loadMoreLeads()" style="background:#263348;border:1px solid #334155;color:#94a3b8;border-radius:6px;padding:6px 18px;cursor:pointer;font-size:.78rem">Load ${Math.min(remaining,LEAD_PAGE)} more leads</button></td>`;
+    tbody.appendChild(tr);
+  }
+}
+
+function loadMoreLeads(){
+  draw(_currentLeadData, false);
 }
 
 /* ── MODAL ── */
@@ -780,13 +802,14 @@ async function loadData(){
     all.sort((a,b)=>{const da=new Date(a.date),db=new Date(b.date);return(isNaN(da)?0:da)>(isNaN(db)?0:db)?-1:1;});
     filtered=[...all];
     chartBuilt={};
-    updateKPIs(all);
-    buildSparklines(all);
-    requestAnimationFrame(()=>buildTab(0,all)); // only build visible tab
-    renderTable();
-    renderLeads(all);
+    showDash(); // show skeleton immediately
+    // Chunk work across frames so browser never blocks
+    setTimeout(()=>updateKPIs(all), 0);
+    setTimeout(()=>buildSparklines(all), 50);
+    setTimeout(()=>{ filtered=[...all]; renderTable(); }, 80);
+    setTimeout(()=>renderLeads(all), 120);
+    setTimeout(()=>requestAnimationFrame(()=>buildTab(0,all)), 160);
     $('lu').textContent=`Updated ${new Date().toLocaleTimeString()}`;
-    showDash();
   }catch(err){
     const m=err?.message||String(err);
     showErr(m.includes('NetworkError')||m.includes('fetch')||m.includes('CORS')?'Network error — sheet may not be public.':'Error: '+m);
