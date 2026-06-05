@@ -265,6 +265,13 @@
     <div class="k" style="--accent:#f97316"><span class="k-icon">🗑️</span><div class="k-label">Wasted Dials<span class="kpi-tip" data-tip="Dials to leads with 5+ DNA attempts and zero connects. Dead numbers burning dial capacity.">i</span></div><div class="k-val" id="kWaste">—</div><div class="k-sub">5+ DNA, no connect</div></div>
   </div>
 
+  <!-- No data message -->
+  <div id="noDataMsg" style="display:none;align-items:center;justify-content:center;padding:32px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;margin:12px 0;gap:12px;flex-direction:column">
+    <span style="font-size:2rem">📭</span>
+    <span style="color:var(--muted);font-size:.9rem">No calls found for this date range</span>
+    <button onclick="setRange('all')" style="background:var(--blue);border:none;color:#fff;border-radius:6px;padding:6px 16px;cursor:pointer;font-size:.82rem">View All Time</button>
+  </div>
+
   <!-- DNC Compliance Alert -->
   <div class="comp-card" id="compCard" style="display:none;margin-top:12px">
     <div class="comp-title">🚨 DNC Compliance Violations — Calls made AFTER DNC result</div>
@@ -782,12 +789,16 @@ function setRange(r){
   else if(r==='7d'){const d=new Date(now);d.setDate(d.getDate()-7);from=toISO(d.toISOString());}
   else if(r==='30d'){const d=new Date(now);d.setDate(d.getDate()-30);from=toISO(d.toISOString());}
   // Update globalRows (affects KPIs, charts, DNC)
-  globalRows=all.filter(r=>{
+  let newGlobal=all.filter(r=>{
     const d=toISO(r.date);
     if(from&&d&&d<from)return false;
     if(to&&d&&d>to)return false;
     return true;
   });
+  globalRows=newGlobal;
+  // Show no-data message if empty
+  const noDataEl=$('noDataMsg');
+  if(noDataEl)noDataEl.style.display=globalRows.length?'none':'flex';
   // Recalculate everything that depends on global filter
   setTimeout(()=>updateKPIs(globalRows),0);
   setTimeout(()=>buildSparklines(globalRows),30);
@@ -971,13 +982,20 @@ $('fPhone').addEventListener('input',df);
 loadData().then(()=>{
   startCD();
   // Render immediately — no setTimeout race condition
-  const todayStr=toISO(new Date().toISOString());
-  const todayRows=all.filter(r=>toISO(r.date)===todayStr);
-  // Use today if data exists, otherwise all time
-  globalRows=todayRows.length?todayRows:[...all];
-  const activeRange=todayRows.length?'today':'all';
+  // Default to last 7 days — always has data
+  const now7=new Date(); now7.setDate(now7.getDate()-7);
+  const from7=toISO(now7.toISOString());
+  globalRows=all.filter(r=>{const d=toISO(r.date);return d&&d>=from7;});
+  // If no data in last 7 days, fall back to most recent 7 days of actual data
+  if(!globalRows.length && all.length){
+    const dates=all.map(r=>toISO(r.date)).filter(Boolean).sort();
+    const latest=dates.at(-1);
+    const earliest=dates[Math.max(0,dates.length-1)];
+    const cutoff=dates[Math.max(0,dates.length-50)]; // last 50 records
+    globalRows=all.filter(r=>{const d=toISO(r.date);return d>=cutoff;});
+  }
   document.querySelectorAll('.pill').forEach(p=>{
-    p.classList.toggle('on',(p.getAttribute('onclick')||'').includes(`'${activeRange}'`));
+    p.classList.toggle('on',(p.getAttribute('onclick')||'').includes("'7d'"));
   });
   filtered=[...globalRows];
   updateKPIs(globalRows);
