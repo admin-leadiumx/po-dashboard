@@ -490,8 +490,7 @@ function classifyDNA(row){
   const dur=parseInt(row.duration,10);
   if(t.includes('forwarded to voice mail')||t.includes('forwarded to voicemail')||t.includes('you know what to do')||t.includes('leave a message')||t.includes('not available')||t.includes('wireless subscriber')||t.includes('cellular customer')) return 'Voicemail';
   if(t.includes('if you record your name')||t.includes('press 1')||t.includes('extension')||t.includes('directory')) return 'IVR/Screening';
-  if(t.includes("i'm sorry")&&dur<=5) return 'Auto-Rejected';
-  if(t.includes('i'm sorry')&&dur<=5) return 'Auto-Rejected';
+  if((t.includes("i'm sorry")||t.includes("i’m sorry"))&&dur<=5) return 'Auto-Rejected';
   if(dur<=3&&t.length<30) return 'Hung Up / Short';
   return 'Voicemail';
 }
