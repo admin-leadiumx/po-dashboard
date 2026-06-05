@@ -500,7 +500,12 @@ function openDetail(r){
   $('detailBody').innerHTML=html;
   $('detailOver').style.display='flex';
 }
-function closeDetail(){$('detailOver').style.display='none';}
+function closeDetail(){
+  $('detailOver').style.display='none';
+  // Stop any playing audio
+  const a=$('detailOver').querySelector('audio');
+  if(a){a.pause();a.currentTime=0;}
+}
 
 /* ── DRILL DOWN ── */
 let drillRows=[];
@@ -820,7 +825,7 @@ function draw(data, reset=false){
     const col=COLS[l.lastResult]||'var(--muted)';
     const tr=document.createElement('tr');
     tr.style.cssText=`border-top:1px solid var(--border)${l.hasDNCViol?';background:rgba(239,68,68,.04)':''}`;
-    tr.innerHTML=`<td style="font-family:monospace;font-size:.75rem">${l.phone}</td><td style="text-align:center;font-weight:700;color:var(--cyan)">${l.total}</td><td style="text-align:center;color:#22c55e">${l.ans}</td><td style="text-align:center;color:var(--muted)">${l.dna}</td><td style="text-align:center;color:#22c55e">${l.booked?'✓':0}</td><td style="text-align:center;color:#dc2626">${l.calls.filter(c=>(c.result||'').trim()==='DNC').length}</td><td style="text-align:center">${l.hasDNCViol?'<span class="viol" style="font-size:.65rem">⚠ VIOL</span>':'<span style="color:#22c55e;font-size:.78rem">✓</span>'}</td><td><span style="background:${col}22;color:${col};padding:1px 7px;border-radius:4px;font-size:.68rem">${l.lastResult||'—'}</span></td><td style="color:var(--muted);font-size:.72rem;white-space:nowrap">${l.lastRaw?fmtDate(l.lastRaw):'—'}</td>`;
+    tr.innerHTML=`<td style="font-family:monospace;font-size:.75rem">${l.phone}</td><td style="text-align:center;font-weight:700;color:var(--cyan)">${l.total}</td><td style="text-align:center;color:#22c55e">${l.ans}</td><td style="text-align:center;color:var(--muted)">${l.dna}</td><td style="text-align:center;color:#22c55e">${l.booked?'✓':0}</td><td style="text-align:center;color:#dc2626">${l.calls.filter(c=>(c.result||'').trim()==='DNC').length}</td><td style="text-align:center">${l.hasDNCViol?'<span class="viol" style="font-size:.65rem">⚠ VIOL</span>':'<span style="color:#f59e0b;font-size:.82rem" title="No violations">—</span>'}</td><td><span style="background:${col}22;color:${col};padding:1px 7px;border-radius:4px;font-size:.68rem">${l.lastResult||'—'}</span></td><td style="color:var(--muted);font-size:.72rem;white-space:nowrap">${l.lastRaw?fmtDate(l.lastRaw):'—'}</td>`;
     frag.appendChild(tr);
   });
   tbody.innerHTML=''; tbody.appendChild(frag);
