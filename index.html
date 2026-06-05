@@ -225,15 +225,15 @@
   <!-- KPIs -->
   <div class="sec">📊 Performance</div>
   <div class="kpis">
-    <div class="k" style="--accent:var(--blue)"><span class="k-icon">📞</span><div class="k-label">Total Dials</div><div class="k-val" id="kTotal">—</div><div class="k-sub">all attempts</div><svg class="spark" id="spkTotal" viewBox="0 0 100 32" preserveAspectRatio="none"></svg></div>
-    <div class="k" style="--accent:var(--green)"><span class="k-icon">🎯</span><div class="k-label">Connect Rate</div><div class="k-val" id="kCR">—</div><div class="k-sub" id="kCRs">answered/total</div><div id="kCRb"></div><svg class="spark" id="spkCR" viewBox="0 0 100 32" preserveAspectRatio="none"></svg></div>
-    <div class="k" style="--accent:#34d399"><span class="k-icon">📅</span><div class="k-label">Booking/Connect</div><div class="k-val" id="kBC">—</div><div class="k-sub">appts per answered</div><div id="kBCb"></div><svg class="spark" id="spkBC" viewBox="0 0 100 32" preserveAspectRatio="none"></svg></div>
-    <div class="k" style="--accent:var(--yellow)"><span class="k-icon">🔁</span><div class="k-label">Dials to Book</div><div class="k-val" id="kDB">—</div><div class="k-sub">avg before appt</div></div>
-    <div class="k" style="--accent:var(--purple)"><span class="k-icon">👥</span><div class="k-label">Lead Reach Rate</div><div class="k-val" id="kRR">—</div><div class="k-sub" id="kRRs">leads connected</div><div id="kRRb"></div><svg class="spark" id="spkRR" viewBox="0 0 100 32" preserveAspectRatio="none"></svg></div>
-    <div class="k" style="--accent:var(--cyan)"><span class="k-icon">🗓️</span><div class="k-label">Appts Booked</div><div class="k-val" id="kAppts">—</div><div class="k-sub">scheduled</div><svg class="spark" id="spkAppts" viewBox="0 0 100 32" preserveAspectRatio="none"></svg></div>
-    <div class="k" style="--accent:var(--orange)"><span class="k-icon">⏱️</span><div class="k-label">Avg Duration</div><div class="k-val" id="kDur">—</div><div class="k-sub">on answered calls</div><svg class="spark" id="spkDur" viewBox="0 0 100 32" preserveAspectRatio="none"></svg></div>
-    <div class="k" style="--accent:var(--red)"><span class="k-icon">⚠️</span><div class="k-label">DNC Violations</div><div class="k-val" id="kDNC">—</div><div class="k-sub">calls after DNC</div><div id="kDNCb"></div></div>
-    <div class="k" style="--accent:#f97316"><span class="k-icon">🗑️</span><div class="k-label">Wasted Dials</div><div class="k-val" id="kWaste">—</div><div class="k-sub">5+ DNA, no connect</div></div>
+    <div class="k" style="--accent:var(--blue)"><span class="k-icon">📞</span><div class="k-label">Total Dials<span class="kpi-tip" data-tip="Total outbound call attempts made by the AI in the selected period.">i</span></div><div class="k-val" id="kTotal">—</div><div class="k-sub">all attempts</div><svg class="spark" id="spkTotal" viewBox="0 0 100 32" preserveAspectRatio="none"></svg></div>
+    <div class="k" style="--accent:var(--green)"><span class="k-icon">🎯</span><div class="k-label">Connect Rate<span class="kpi-tip" data-tip="% of dials where a human answered. Your north-star metric. Industry avg 8-12%. Above 20% = excellent.">i</span></div><div class="k-val" id="kCR">—</div><div class="k-sub" id="kCRs">answered/total</div><div id="kCRb"></div><svg class="spark" id="spkCR" viewBox="0 0 100 32" preserveAspectRatio="none"></svg></div>
+    <div class="k" style="--accent:#34d399"><span class="k-icon">📅</span><div class="k-label">Booking/Connect<span class="kpi-tip" data-tip="Of answered calls, what % booked an appointment. Above 20% = strong. Isolates agent quality from dial volume.">i</span></div><div class="k-val" id="kBC">—</div><div class="k-sub">appts per answered</div><div id="kBCb"></div><svg class="spark" id="spkBC" viewBox="0 0 100 32" preserveAspectRatio="none"></svg></div>
+    <div class="k" style="--accent:var(--yellow)"><span class="k-icon">🔁</span><div class="k-label">Dials to Book<span class="kpi-tip" data-tip="Average attempts before a lead books. Lower = better cadence. Use this to set your retry limit.">i</span></div><div class="k-val" id="kDB">—</div><div class="k-sub">avg before appt</div></div>
+    <div class="k" style="--accent:var(--purple)"><span class="k-icon">👥</span><div class="k-label">Lead Reach Rate<span class="kpi-tip" data-tip="% of unique leads where at least one call was answered. Low = most leads never had a real conversation.">i</span></div><div class="k-val" id="kRR">—</div><div class="k-sub" id="kRRs">leads connected</div><div id="kRRb"></div><svg class="spark" id="spkRR" viewBox="0 0 100 32" preserveAspectRatio="none"></svg></div>
+    <div class="k" style="--accent:var(--cyan)"><span class="k-icon">🗓️</span><div class="k-label">Appts Booked<span class="kpi-tip" data-tip="Total Scheduled Appointments confirmed by the AI agent in the selected period.">i</span></div><div class="k-val" id="kAppts">—</div><div class="k-sub">scheduled</div><svg class="spark" id="spkAppts" viewBox="0 0 100 32" preserveAspectRatio="none"></svg></div>
+    <div class="k" style="--accent:var(--orange)"><span class="k-icon">⏱️</span><div class="k-label">Avg Duration<span class="kpi-tip" data-tip="Average call duration on answered calls. Short answered calls may indicate hang-ups.">i</span></div><div class="k-val" id="kDur">—</div><div class="k-sub">on answered calls</div><svg class="spark" id="spkDur" viewBox="0 0 100 32" preserveAspectRatio="none"></svg></div>
+    <div class="k" style="--accent:var(--red)"><span class="k-icon">⚠️</span><div class="k-label">DNC Violations<span class="kpi-tip" data-tip="Calls made AFTER a lead was marked Do Not Call. Legal compliance risk — zero tolerance required.">i</span></div><div class="k-val" id="kDNC">—</div><div class="k-sub">calls after DNC</div><div id="kDNCb"></div></div>
+    <div class="k" style="--accent:#f97316"><span class="k-icon">🗑️</span><div class="k-label">Wasted Dials<span class="kpi-tip" data-tip="Dials to leads with 5+ DNA attempts and zero connects. Dead numbers burning dial capacity.">i</span></div><div class="k-val" id="kWaste">—</div><div class="k-sub">5+ DNA, no connect</div></div>
   </div>
 
   <!-- DNC Compliance Alert -->
@@ -335,6 +335,17 @@
 
 </main>
 
+<!-- Full Detail Modal -->
+<div class="detail-over" id="detailOver" style="display:none" onclick="if(event.target===this)closeDetail()">
+  <div class="detail-modal">
+    <div class="detail-head">
+      <span class="detail-head-title" id="detailTitle">Call Detail</span>
+      <button class="detail-close" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="detail-body" id="detailBody"></div>
+  </div>
+</div>
+
 <!-- Drill-down Panel -->
 <div class="drill-overlay" id="drillOverlay" style="display:none" onclick="closeDrill()"></div>
 <div class="drill-panel" id="drillPanel">
@@ -346,7 +357,7 @@
   </div>
   <div class="drill-body">
     <table class="drill-table">
-      <thead><tr><th>Date/Time</th><th>Phone</th><th>Dur</th><th>Result</th><th>Transcript</th></tr></thead>
+      <thead><tr><th>Date/Time</th><th>Phone</th><th>Dur</th><th>Result</th><th>Transcript</th><th></th></tr></thead>
       <tbody id="drillBody"></tbody>
     </table>
   </div>
@@ -452,6 +463,28 @@ function buildSparklines(rows){
   sparkline($('spkDur'),avgDurs,'#f97316');
 }
 
+/* ── FULL DETAIL MODAL ── */
+function openDetail(r){
+  if(!r)return;
+  $('detailTitle').textContent=`📞 ${r.phone||'Unknown'} — ${fmtDT(r.date)}`;
+  const RCOLS={'dna':'#94a3b8','dnc':'#ef4444','call_later':'#f59e0b','property_sold':'#a855f7','not_interested':'#f87171','interested':'#60a5fa','scheduled_appointment':'#34d399'};
+  const rc=RCOLS[rKey(r.result||'')]||'#94a3b8';
+  const fields=[
+    {l:'Phone',v:r.phone||'—'},
+    {l:'Date & Time',v:fmtDT(r.date)},
+    {l:'Direction',v:(r.direction||'—').toUpperCase()},
+    {l:'Duration',v:fmtDur(r.duration)},
+    {l:'Result',v:`<span style="background:${rc}22;color:${rc};padding:2px 10px;border-radius:20px;font-size:.78rem;font-weight:700">${(r.result||'—').replace(/_/g,' ')}</span>`},
+    {l:'DNA Type',v:dnaType(r)||'—'},
+  ];
+  let html=fields.map(f=>`<div class="detail-field"><label>${f.l}</label><span>${f.v}</span></div>`).join('');
+  if(r.recording){html+=`<div class="detail-audio"><audio controls style="width:100%;accent-color:#3b82f6;margin-top:4px" src="${esc(r.recording)}">No audio support.</audio><div style="margin-top:6px"><a href="${esc(r.recording)}" download style="color:#3b82f6;font-size:.75rem">⬇ Download recording</a></div></div>`;}
+  html+=`<div class="detail-transcript"><label>📝 Full Transcript</label><pre>${esc((r.transcript||'').trim()||'(No transcript available)')}</pre></div>`;
+  $('detailBody').innerHTML=html;
+  $('detailOver').style.display='flex';
+}
+function closeDetail(){$('detailOver').style.display='none';}
+
 /* ── DRILL DOWN ── */
 let drillRows=[];
 function openDrill(title,rows){
@@ -459,18 +492,20 @@ function openDrill(title,rows){
   $('drillTitle').textContent=title;
   $('drillCount').textContent=`${rows.length} call${rows.length!==1?'s':''}`;
   const tbody=$('drillBody');
-  if(!rows.length){tbody.innerHTML=`<tr><td colspan="5" class="drill-empty">No calls in this segment.</td></tr>`;}
+  if(!rows.length){tbody.innerHTML=`<tr><td colspan="6" class="drill-empty">No calls in this segment.</td></tr>`;}
   else{
     const frag=document.createDocumentFragment();
-    rows.slice(0,200).forEach((r,i)=>{
+    rows.slice(0,200).forEach((r)=>{
       const tr=document.createElement('tr');
-      const snippet=esc((r.transcript||'').trim().slice(0,80));
-      tr.innerHTML=`<td style="white-space:nowrap">${fmtDT(r.date)}</td><td style="font-family:monospace;font-size:.7rem">${esc(r.phone||'—')}</td><td>${fmtDur(r.duration)}</td><td>${resBadge((r.result||'').trim())}</td><td style="color:#94a3b8;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc((r.transcript||'').trim())}">${snippet||'—'}</td>`;
+      tr.onclick=()=>openDetail(r);
+      const snippet=esc((r.transcript||'').trim().slice(0,70));
+      tr.innerHTML=`<td style="white-space:nowrap">${fmtDT(r.date)}</td><td style="font-family:monospace;font-size:.7rem">${esc(r.phone||'—')}</td><td>${fmtDur(r.duration)}</td><td>${resBadge((r.result||'').trim())}</td><td style="color:#94a3b8;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${snippet||'—'}</td><td><button onclick="event.stopPropagation();this._r&&openDetail(this._r)" style="background:#263348;border:1px solid #475569;color:#94a3b8;border-radius:4px;padding:2px 7px;cursor:pointer;font-size:.65rem">⇗ Detail</button></td>`;
+      tr.querySelector('button')._r=r;
       frag.appendChild(tr);
     });
     tbody.innerHTML='';
     tbody.appendChild(frag);
-    if(rows.length>200)tbody.insertAdjacentHTML('beforeend',`<tr><td colspan="5" style="text-align:center;padding:10px;color:#94a3b8;font-size:.72rem">Showing 200 of ${rows.length} calls</td></tr>`);
+    if(rows.length>200)tbody.insertAdjacentHTML('beforeend',`<tr><td colspan="6" style="text-align:center;padding:10px;color:#94a3b8;font-size:.72rem">Showing 200 of ${rows.length} calls</td></tr>`);
   }
   $('drillOverlay').style.display='block';
   requestAnimationFrame(()=>$('drillPanel').classList.add('open'));
@@ -558,12 +593,16 @@ function updateKPIs(rows){
   $('kDNCb').innerHTML=viols===0?'<span class="badge good">✓ Clean</span>':'<span class="badge bad">⚠ Risk</span>';
   $('kWaste').textContent=wasted.toLocaleString();
 
-  // Compliance card
-  if(violList.length){
+  renderCompliance(violList);
+}
+
+/* ── COMPLIANCE (dynamic) ── */
+function renderCompliance(vl){
+  if(vl&&vl.length){
     $('compCard').style.display='block';
     $('compBody').innerHTML='<table style="width:100%;font-size:.78rem;color:var(--muted)"><tr><th style="text-align:left;padding:4px 8px">Phone</th><th style="text-align:left;padding:4px 8px">DNC Date</th><th style="text-align:left;padding:4px 8px">Calls After</th></tr>'+
-      violList.map(v=>`<tr><td style="padding:4px 8px;font-family:monospace">${esc(v.phone)}</td><td style="padding:4px 8px">${fmtDT(v.dncAt)}</td><td style="padding:4px 8px"><span class="viol">${v.count} violation${v.count>1?'s':''}</span></td></tr>`).join('')+'</table>';
-  } else {$('compCard').style.display='none';}
+      vl.map(v=>`<tr><td style="padding:4px 8px;font-family:monospace">${esc(v.phone)}</td><td style="padding:4px 8px">${fmtDT(v.dncAt)}</td><td style="padding:4px 8px"><span class="viol">${v.count} violation${v.count!==1?'s':''}</span></td></tr>`).join('')+'</table>';
+  }else{$('compCard').style.display='none';}
 }
 
 /* ── CHART TAB SYSTEM ── */
@@ -665,6 +704,21 @@ function applyFilters(){
     return true;
   });
   page=1;renderTable();
+  // Recompute DNC compliance for active filter
+  const lmap={};
+  [...filtered].sort((a,b)=>new Date(a.date)-new Date(b.date)).forEach(r=>{
+    const p=(r.phone||'').trim();if(!p)return;
+    if(!lmap[p])lmap[p]={dncAt:null,calls:[]};
+    lmap[p].calls.push(r);
+    if((r.result||'').trim()==='DNC'&&!lmap[p].dncAt)lmap[p].dncAt=r.date;
+  });
+  const vl=[];
+  Object.entries(lmap).forEach(([phone,l])=>{
+    if(!l.dncAt)return;
+    const after=l.calls.filter(c=>c.date>l.dncAt&&c.result!=='DNC');
+    if(after.length)vl.push({phone,dncAt:l.dncAt,count:after.length});
+  });
+  renderCompliance(vl);
 }
 
 function clearFilters(){
@@ -685,16 +739,15 @@ function renderTable(){
   const tbody=$('tbody');
   if(!slice.length){tbody.innerHTML='<tr class="empty"><td colspan="8">No calls match filters.</td></tr>';renderPag(pages);return;}
   const frag=document.createDocumentFragment();
-  slice.forEach((r,i)=>{
+  slice.forEach((r)=>{
     const dt=dnaType(r);
-    const recUrl=(r.recording||'').trim();
-    const recH=recUrl?`<button onclick="openAudio('${recUrl.replace(/'/g,"\\'")}')" style="background:#3b82f6;border:none;color:#fff;padding:2px 9px;border-radius:5px;cursor:pointer;font-size:.72rem">▶</button>`:'<span style="color:var(--muted)">—</span>';
-    const tr=esc((r.transcript||'').trim().slice(0,100));
-    const hasFull=(r.transcript||'').trim().length>100;
-    const trH=r.transcript?`<span class="ts">${tr}${hasFull?'…':''}</span>${hasFull?`<button class="eb" onclick="openModal(${start+i})">Expand ↗</button>`:'`'}`:'<span style="color:var(--muted)">—</span>';
     const row=document.createElement('tr');
     row.className=rowCls(r.result);
-    row.innerHTML=`<td style="white-space:nowrap;font-size:.72rem">${fmtDT(r.date)}</td><td style="font-family:monospace;font-size:.72rem">${esc(r.phone||'—')}</td><td>${dirBadge(r.direction)}</td><td>${fmtDur(r.duration)}</td><td>${resBadge((r.result||'').trim())}</td><td>${dnaBadge(dt)}</td><td>${recH}</td><td class="tc">${trH}</td>`;
+    row.style.cursor='pointer';
+    row.onclick=()=>openDetail(r);
+    const snippet=esc((r.transcript||'').trim().slice(0,80));
+    const trH=`<span class="ts">${snippet}${(r.transcript||'').length>80?'…':''}</span>`;
+    row.innerHTML=`<td style="white-space:nowrap;font-size:.72rem">${fmtDT(r.date)}</td><td style="font-family:monospace;font-size:.72rem">${esc(r.phone||'—')}</td><td>${dirBadge(r.direction)}</td><td>${fmtDur(r.duration)}</td><td>${resBadge((r.result||'').trim())}</td><td>${dnaBadge(dt)}</td><td>${r.recording?'<span style="color:#22c55e;font-size:.78rem">●</span>':'—'}</td><td class="tc">${trH}</td>`;
     frag.appendChild(row);
   });
   tbody.innerHTML=''; tbody.appendChild(frag);
@@ -819,7 +872,7 @@ async function loadData(){
 /* ── COUNTDOWN ── */
 function startCD(){
   clearInterval(cdTimer);cdVal=60;$('cd').textContent='60s';
-  cdTimer=setInterval(()=>{cdVal--;$('cd').textContent=cdVal+'s';if(cdVal<=0){clearInterval(cdTimer);loadData().then(startCD);}},1000);
+  cdTimer=setInterval(()=>{cdVal--;$('cd').textContent=cdVal+'s';if(cdVal<=0){clearInterval(cdTimer);loadData().then(()=>{startCD();setTimeout(()=>setRange('today'),200);});}},1000);
 }
 
 /* ── LISTENERS ── */
