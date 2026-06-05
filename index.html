@@ -945,16 +945,11 @@ async function loadData(){
     if(!result?.data?.length){showErr('Sheet returned no rows. Make sure it is published publicly.');return;}
     all=result.data.map(row=>{const n={};Object.keys(row).forEach(k=>{n[k.trim().toLowerCase()]=(row[k]||'').trim();});return n;});
     all.sort((a,b)=>{const da=new Date(a.date),db=new Date(b.date);return(isNaN(da)?0:da)>(isNaN(db)?0:db)?-1:1;});
-    filtered=[...all];
     chartBuilt={};
-    showDash(); // show skeleton immediately
-    // Chunk work across frames so browser never blocks
-    setTimeout(()=>updateKPIs(all), 0);
-    setTimeout(()=>buildSparklines(all), 50);
-    setTimeout(()=>{ filtered=[...all]; renderTable(); }, 80);
-    setTimeout(()=>renderLeads(all), 120);
-    setTimeout(()=>requestAnimationFrame(()=>buildTab(0,all)), 160);
+    globalRows=[...all];
+    showDash();
     $('lu').textContent=`Updated ${new Date().toLocaleTimeString()}`;
+    // setRange('today') called at boot handles all rendering
   }catch(err){
     const m=err?.message||String(err);
     showErr(m.includes('NetworkError')||m.includes('fetch')||m.includes('CORS')?'Network error — sheet may not be public.':'Error: '+m);
