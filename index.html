@@ -959,7 +959,7 @@ async function loadData(){
 /* ── COUNTDOWN ── */
 function startCD(){
   clearInterval(cdTimer);cdVal=60;$('cd').textContent='60s';
-  cdTimer=setInterval(()=>{cdVal--;$('cd').textContent=cdVal+'s';if(cdVal<=0){clearInterval(cdTimer);loadData().then(()=>{startCD();setRange('today');});}},1000);
+  cdTimer=setInterval(()=>{cdVal--;$('cd').textContent=cdVal+'s';if(cdVal<=0){clearInterval(cdTimer);loadData().then(startCD);}},1000);
 }
 
 /* ── LISTENERS ── */
@@ -968,7 +968,24 @@ $('fRes').addEventListener('change',applyFilters);
 if($('fFrom'))$('fFrom').addEventListener('change',applyFilters);
 if($('fTo'))$('fTo').addEventListener('change',applyFilters);
 $('fPhone').addEventListener('input',df);
-loadData().then(startCD);
+loadData().then(()=>{
+  startCD();
+  // Render immediately — no setTimeout race condition
+  const todayStr=toISO(new Date().toISOString());
+  const todayRows=all.filter(r=>toISO(r.date)===todayStr);
+  // Use today if data exists, otherwise all time
+  globalRows=todayRows.length?todayRows:[...all];
+  const activeRange=todayRows.length?'today':'all';
+  document.querySelectorAll('.pill').forEach(p=>{
+    p.classList.toggle('on',(p.getAttribute('onclick')||'').includes(`'${activeRange}'`));
+  });
+  filtered=[...globalRows];
+  updateKPIs(globalRows);
+  buildSparklines(globalRows);
+  renderTable();
+  renderLeads(globalRows);
+  requestAnimationFrame(()=>buildTab(0,globalRows));
+});
 </script>
 </body>
 </html>
