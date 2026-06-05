@@ -155,6 +155,23 @@
     .spark-flat{color:#94a3b8}
     .spark-down{color:#ef4444}
 
+    /* Full Detail Modal */
+    .detail-over{position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,.82);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
+    .detail-modal{background:#1e293b;border:1px solid #334155;border-radius:12px;width:min(760px,95vw);max-height:86vh;display:flex;flex-direction:column;box-shadow:0 25px 60px rgba(0,0,0,.6)}
+    .detail-head{display:flex;justify-content:space-between;align-items:flex-start;padding:16px 20px;border-bottom:1px solid #334155;gap:12px}
+    .detail-head-title{font-weight:700;font-size:.9rem;color:#f1f5f9;word-break:break-all}
+    .detail-close{background:none;border:none;color:#94a3b8;font-size:1.4rem;cursor:pointer;flex-shrink:0;line-height:1}
+    .detail-close:hover{color:#f1f5f9}
+    .detail-body{padding:16px 20px;overflow-y:auto;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .detail-field{background:#0f172a;border:1px solid #334155;border-radius:8px;padding:10px 14px}
+    .detail-field label{font-size:.6rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;font-weight:600;display:block;margin-bottom:4px}
+    .detail-field span{font-size:.82rem;color:#f1f5f9;word-break:break-all}
+    .detail-transcript{grid-column:span 2;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:12px 14px}
+    .detail-transcript label{font-size:.6rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;font-weight:600;display:block;margin-bottom:8px}
+    .detail-transcript pre{font-size:.8rem;color:#cbd5e1;white-space:pre-wrap;word-break:break-word;line-height:1.7;max-height:280px;overflow-y:auto;font-family:inherit}
+    .detail-audio{grid-column:span 2;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:10px 14px}
+    @media(max-width:520px){.detail-body{grid-template-columns:1fr}.detail-transcript,.detail-audio{grid-column:span 1}}
+
     /* Drill-down panel */
     .drill-overlay{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5)}
     .drill-panel{position:fixed;top:0;right:0;bottom:0;width:min(600px,95vw);background:#1e293b;border-left:1px solid #334155;display:flex;flex-direction:column;z-index:301;transform:translateX(100%);transition:transform .25s ease}
@@ -498,8 +515,10 @@ function openDrill(title,rows){
     rows.slice(0,200).forEach((r)=>{
       const tr=document.createElement('tr');
       tr.onclick=()=>openDetail(r);
+      tr.title='Click row to open full detail';
+      tr.style.cursor='pointer';
       const snippet=esc((r.transcript||'').trim().slice(0,70));
-      tr.innerHTML=`<td style="white-space:nowrap">${fmtDT(r.date)}</td><td style="font-family:monospace;font-size:.7rem">${esc(r.phone||'—')}</td><td>${fmtDur(r.duration)}</td><td>${resBadge((r.result||'').trim())}</td><td style="color:#94a3b8;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${snippet||'—'}</td><td><button onclick="event.stopPropagation();this._r&&openDetail(this._r)" style="background:#263348;border:1px solid #475569;color:#94a3b8;border-radius:4px;padding:2px 7px;cursor:pointer;font-size:.65rem">⇗ Detail</button></td>`;
+      tr.innerHTML=`<td style="white-space:nowrap">${fmtDT(r.date)}</td><td style="font-family:monospace;font-size:.7rem">${esc(r.phone||'—')}</td><td>${fmtDur(r.duration)}</td><td>${resBadge((r.result||'').trim())}</td><td style="color:#94a3b8;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${snippet||'—'}</td><td><button onclick="event.stopPropagation();this._r&&openDetail(this._r)" style="background:#3b82f6;border:none;color:#fff;border-radius:4px;padding:3px 9px;cursor:pointer;font-size:.72rem;font-weight:600;white-space:nowrap">⇗ Detail</button></td>`;
       tr.querySelector('button')._r=r;
       frag.appendChild(tr);
     });
@@ -744,6 +763,7 @@ function renderTable(){
     const row=document.createElement('tr');
     row.className=rowCls(r.result);
     row.style.cursor='pointer';
+    row.title='Click to view full call detail';
     row.onclick=()=>openDetail(r);
     const snippet=esc((r.transcript||'').trim().slice(0,80));
     const trH=`<span class="ts">${snippet}${(r.transcript||'').length>80?'…':''}</span>`;
