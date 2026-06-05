@@ -149,6 +149,33 @@
     .pb:disabled{opacity:.35;cursor:not-allowed}
     .empty td{text-align:center;color:var(--muted);padding:36px;font-size:.85rem}
 
+    /* Sparklines */
+    .spark{display:block;width:100%;height:32px;margin-top:8px;opacity:.8}
+    .spark-up{color:#22c55e}
+    .spark-flat{color:#94a3b8}
+    .spark-down{color:#ef4444}
+
+    /* Drill-down panel */
+    .drill-overlay{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5)}
+    .drill-panel{position:fixed;top:0;right:0;bottom:0;width:min(600px,95vw);background:#1e293b;border-left:1px solid #334155;display:flex;flex-direction:column;z-index:301;transform:translateX(100%);transition:transform .25s ease}
+    .drill-panel.open{transform:translateX(0)}
+    .drill-head{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid #334155;gap:12px;flex-wrap:wrap}
+    .drill-title{font-weight:700;font-size:.9rem;color:#f1f5f9}
+    .drill-count{font-size:.72rem;color:#94a3b8;background:#0f172a;border:1px solid #334155;border-radius:20px;padding:2px 10px}
+    .drill-close{background:none;border:none;color:#94a3b8;font-size:1.2rem;cursor:pointer;line-height:1}
+    .drill-close:hover{color:#f1f5f9}
+    .drill-filter-btn{background:#3b82f6;border:none;color:#fff;border-radius:6px;padding:4px 12px;font-size:.75rem;cursor:pointer;white-space:nowrap}
+    .drill-filter-btn:hover{background:#1d4ed8}
+    .drill-body{flex:1;overflow-y:auto;padding:0}
+    .drill-table{width:100%;border-collapse:collapse;font-size:.75rem}
+    .drill-table thead th{background:#0f172a;color:#94a3b8;font-weight:600;text-transform:uppercase;font-size:.62rem;letter-spacing:.05em;padding:8px 14px;text-align:left;position:sticky;top:0}
+    .drill-table tbody tr{border-top:1px solid #334155;cursor:pointer}
+    .drill-table tbody tr:hover{background:#263348}
+    .drill-table tbody td{padding:7px 14px;vertical-align:middle;color:#f1f5f9}
+    .drill-empty{text-align:center;padding:40px;color:#94a3b8;font-size:.85rem}
+    /* chart cursor hint */
+    canvas{cursor:pointer}
+
     /* Modal */
     .mover{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px}
     .modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);max-width:680px;width:100%;max-height:80vh;display:flex;flex-direction:column}
@@ -198,13 +225,13 @@
   <!-- KPIs -->
   <div class="sec">📊 Performance</div>
   <div class="kpis">
-    <div class="k" style="--accent:var(--blue)"><span class="k-icon">📞</span><div class="k-label">Total Dials</div><div class="k-val" id="kTotal">—</div><div class="k-sub">all attempts</div></div>
-    <div class="k" style="--accent:var(--green)"><span class="k-icon">🎯</span><div class="k-label">Connect Rate</div><div class="k-val" id="kCR">—</div><div class="k-sub" id="kCRs">answered/total</div><div id="kCRb"></div></div>
-    <div class="k" style="--accent:#34d399"><span class="k-icon">📅</span><div class="k-label">Booking/Connect</div><div class="k-val" id="kBC">—</div><div class="k-sub">appts per answered</div><div id="kBCb"></div></div>
+    <div class="k" style="--accent:var(--blue)"><span class="k-icon">📞</span><div class="k-label">Total Dials</div><div class="k-val" id="kTotal">—</div><div class="k-sub">all attempts</div><svg class="spark" id="spkTotal" viewBox="0 0 100 32" preserveAspectRatio="none"></svg></div>
+    <div class="k" style="--accent:var(--green)"><span class="k-icon">🎯</span><div class="k-label">Connect Rate</div><div class="k-val" id="kCR">—</div><div class="k-sub" id="kCRs">answered/total</div><div id="kCRb"></div><svg class="spark" id="spkCR" viewBox="0 0 100 32" preserveAspectRatio="none"></svg></div>
+    <div class="k" style="--accent:#34d399"><span class="k-icon">📅</span><div class="k-label">Booking/Connect</div><div class="k-val" id="kBC">—</div><div class="k-sub">appts per answered</div><div id="kBCb"></div><svg class="spark" id="spkBC" viewBox="0 0 100 32" preserveAspectRatio="none"></svg></div>
     <div class="k" style="--accent:var(--yellow)"><span class="k-icon">🔁</span><div class="k-label">Dials to Book</div><div class="k-val" id="kDB">—</div><div class="k-sub">avg before appt</div></div>
-    <div class="k" style="--accent:var(--purple)"><span class="k-icon">👥</span><div class="k-label">Lead Reach Rate</div><div class="k-val" id="kRR">—</div><div class="k-sub" id="kRRs">leads connected</div><div id="kRRb"></div></div>
-    <div class="k" style="--accent:var(--cyan)"><span class="k-icon">🗓️</span><div class="k-label">Appts Booked</div><div class="k-val" id="kAppts">—</div><div class="k-sub">scheduled</div></div>
-    <div class="k" style="--accent:var(--orange)"><span class="k-icon">⏱️</span><div class="k-label">Avg Duration</div><div class="k-val" id="kDur">—</div><div class="k-sub">on answered calls</div></div>
+    <div class="k" style="--accent:var(--purple)"><span class="k-icon">👥</span><div class="k-label">Lead Reach Rate</div><div class="k-val" id="kRR">—</div><div class="k-sub" id="kRRs">leads connected</div><div id="kRRb"></div><svg class="spark" id="spkRR" viewBox="0 0 100 32" preserveAspectRatio="none"></svg></div>
+    <div class="k" style="--accent:var(--cyan)"><span class="k-icon">🗓️</span><div class="k-label">Appts Booked</div><div class="k-val" id="kAppts">—</div><div class="k-sub">scheduled</div><svg class="spark" id="spkAppts" viewBox="0 0 100 32" preserveAspectRatio="none"></svg></div>
+    <div class="k" style="--accent:var(--orange)"><span class="k-icon">⏱️</span><div class="k-label">Avg Duration</div><div class="k-val" id="kDur">—</div><div class="k-sub">on answered calls</div><svg class="spark" id="spkDur" viewBox="0 0 100 32" preserveAspectRatio="none"></svg></div>
     <div class="k" style="--accent:var(--red)"><span class="k-icon">⚠️</span><div class="k-label">DNC Violations</div><div class="k-val" id="kDNC">—</div><div class="k-sub">calls after DNC</div><div id="kDNCb"></div></div>
     <div class="k" style="--accent:#f97316"><span class="k-icon">🗑️</span><div class="k-label">Wasted Dials</div><div class="k-val" id="kWaste">—</div><div class="k-sub">5+ DNA, no connect</div></div>
   </div>
@@ -308,6 +335,23 @@
 
 </main>
 
+<!-- Drill-down Panel -->
+<div class="drill-overlay" id="drillOverlay" style="display:none" onclick="closeDrill()"></div>
+<div class="drill-panel" id="drillPanel">
+  <div class="drill-head">
+    <span class="drill-title" id="drillTitle">Drill Down</span>
+    <span class="drill-count" id="drillCount"></span>
+    <button class="drill-filter-btn" onclick="applyDrillFilter()">Apply as Filter ↓</button>
+    <button class="drill-close" onclick="closeDrill()">✕</button>
+  </div>
+  <div class="drill-body">
+    <table class="drill-table">
+      <thead><tr><th>Date/Time</th><th>Phone</th><th>Dur</th><th>Result</th><th>Transcript</th></tr></thead>
+      <tbody id="drillBody"></tbody>
+    </table>
+  </div>
+</div>
+
 <!-- Transcript Modal -->
 <div class="mover" id="modal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
   <div class="modal">
@@ -352,6 +396,100 @@ const getHr=raw=>{if(!raw)return null;const d=new Date(raw);if(isNaN(d))return n
 const fmtDur=s=>{const n=parseInt(s,10);if(isNaN(n))return'—';return`${Math.floor(n/60)}:${String(n%60).padStart(2,'0')}`;};
 const fmtDate=raw=>{if(!raw)return'—';const d=new Date(raw);if(isNaN(d))return raw;return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',timeZone:TZ});};
 const fmtDT=raw=>{if(!raw)return'—';const d=new Date(raw);if(isNaN(d))return raw;return d.toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',hour12:true,timeZone:TZ});};
+
+/* ── SPARKLINES ── */
+function sparkline(svgEl, values, color){
+  if(!svgEl||!values||values.length<2)return;
+  const v=values.filter(x=>x!==null&&!isNaN(x));
+  if(v.length<2)return;
+  const mn=Math.min(...v), mx=Math.max(...v), rng=mx-mn||1;
+  const W=100, H=28, pad=2;
+  const pts=v.map((val,i)=>{
+    const x=pad+(W-pad*2)*i/(v.length-1);
+    const y=H-pad-(H-pad*2)*(val-mn)/rng;
+    return`${x},${y}`;
+  });
+  // Area fill
+  const areaD=`M${pts[0]} `+pts.slice(1).map(p=>`L${p}`).join(' ')+` L${pts.at(-1).split(',')[0]},${H} L${pts[0].split(',')[0]},${H} Z`;
+  // Line
+  const lineD=`M${pts[0]} `+pts.slice(1).map(p=>`L${p}`).join(' ');
+  const trend=v.at(-1)>=v[0]?1:-1;
+  const strokeCol=color||(trend>=0?'#22c55e':'#ef4444');
+  const fillCol=strokeCol.replace('#','');
+  svgEl.innerHTML=`<defs><linearGradient id="g${fillCol}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${strokeCol}" stop-opacity=".25"/><stop offset="100%" stop-color="${strokeCol}" stop-opacity="0"/></linearGradient></defs><path d="${areaD}" fill="url(#g${fillCol})"/><path d="${lineD}" fill="none" stroke="${strokeCol}" stroke-width="1.5" stroke-linejoin="round"/>`;
+}
+
+function buildSparklines(rows){
+  // Group by day
+  const days={};
+  rows.forEach(r=>{
+    const d=toISO(r.date);if(!d)return;
+    if(!days[d])days[d]={total:0,ans:0,appts:0,durs:[]};
+    days[d].total++;
+    if(isAns(r)){days[d].ans++;const dur=+r.duration||0;if(dur>0)days[d].durs.push(dur);}
+    if((r.result||'').trim()==='Scheduled Appointment')days[d].appts++;
+  });
+  const sorted=Object.keys(days).sort();
+  if(sorted.length<2)return;
+  const totals=sorted.map(d=>days[d].total);
+  const crRates=sorted.map(d=>days[d].total?Math.round(days[d].ans/days[d].total*100):0);
+  const bcRates=sorted.map(d=>days[d].ans?Math.round(days[d].appts/days[d].ans*100):0);
+  const apptCts=sorted.map(d=>days[d].appts);
+  const avgDurs=sorted.map(d=>days[d].durs.length?Math.round(days[d].durs.reduce((a,b)=>a+b,0)/days[d].durs.length):0);
+  // Reach rate per day (unique leads reached)
+  const dayLeads={};
+  rows.forEach(r=>{
+    const d=toISO(r.date),p=(r.phone||'').trim();if(!d||!p)return;
+    if(!dayLeads[d])dayLeads[d]=new Set();
+    if(isAns(r))dayLeads[d].add(p);
+  });
+  const rrVals=sorted.map(d=>dayLeads[d]?dayLeads[d].size:0);
+  sparkline($('spkTotal'),totals,'#3b82f6');
+  sparkline($('spkCR'),crRates);
+  sparkline($('spkBC'),bcRates);
+  sparkline($('spkRR'),rrVals,'#a855f7');
+  sparkline($('spkAppts'),apptCts,'#06b6d4');
+  sparkline($('spkDur'),avgDurs,'#f97316');
+}
+
+/* ── DRILL DOWN ── */
+let drillRows=[];
+function openDrill(title,rows){
+  drillRows=rows;
+  $('drillTitle').textContent=title;
+  $('drillCount').textContent=`${rows.length} call${rows.length!==1?'s':''}`;
+  const tbody=$('drillBody');
+  if(!rows.length){tbody.innerHTML=`<tr><td colspan="5" class="drill-empty">No calls in this segment.</td></tr>`;}
+  else{
+    const frag=document.createDocumentFragment();
+    rows.slice(0,200).forEach((r,i)=>{
+      const tr=document.createElement('tr');
+      const snippet=esc((r.transcript||'').trim().slice(0,80));
+      tr.innerHTML=`<td style="white-space:nowrap">${fmtDT(r.date)}</td><td style="font-family:monospace;font-size:.7rem">${esc(r.phone||'—')}</td><td>${fmtDur(r.duration)}</td><td>${resBadge((r.result||'').trim())}</td><td style="color:#94a3b8;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc((r.transcript||'').trim())}">${snippet||'—'}</td>`;
+      frag.appendChild(tr);
+    });
+    tbody.innerHTML='';
+    tbody.appendChild(frag);
+    if(rows.length>200)tbody.insertAdjacentHTML('beforeend',`<tr><td colspan="5" style="text-align:center;padding:10px;color:#94a3b8;font-size:.72rem">Showing 200 of ${rows.length} calls</td></tr>`);
+  }
+  $('drillOverlay').style.display='block';
+  requestAnimationFrame(()=>$('drillPanel').classList.add('open'));
+}
+
+function closeDrill(){
+  $('drillPanel').classList.remove('open');
+  setTimeout(()=>{$('drillOverlay').style.display='none';},260);
+}
+
+function applyDrillFilter(){
+  // Scroll to table and show drill rows as filtered
+  filtered=[...drillRows];
+  page=1;
+  renderTable();
+  closeDrill();
+  document.querySelector('.tcard').scrollIntoView({behavior:'smooth',block:'start'});
+  $('rCount').textContent=`${filtered.length} rows (drill-down — click Clear to reset)`;
+}
 
 /* ── DNA CLASSIFIER ── */
 function dnaType(r){
@@ -439,16 +577,16 @@ function buildTab(tab,rows){
     const rc={};rows.forEach(r=>{const k=(r.result||'Unknown').trim();rc[k]=(rc[k]||0)+1;});
     const rl=Object.keys(rc);
     if(charts.res)charts.res.destroy();
-    charts.res=new Chart($('cResults'),{type:'bar',data:{labels:rl,datasets:[{data:Object.values(rc),backgroundColor:rl.map(getRC),borderRadius:4,borderSkipped:false}]},options:{...CHART_OPT,responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#94a3b8',font:{size:10}},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{color:'#334155'},beginAtZero:true}}}});
+    charts.res=new Chart($('cResults'),{type:'bar',data:{labels:rl,datasets:[{data:Object.values(rc),backgroundColor:rl.map(getRC),borderRadius:4,borderSkipped:false}]},options:{...CHART_OPT,responsive:true,onClick:(e,els)=>{if(!els.length)return;const lbl=rl[els[0].index];openDrill(`Result: ${lbl}`,rows.filter(r=>(r.result||'Unknown').trim()===lbl));},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.parsed.y} calls — click to drill down`}}},scales:{x:{ticks:{color:'#94a3b8',font:{size:10}},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{color:'#334155'},beginAtZero:true}}}});
     const an=rows.filter(isAns).length, dn=rows.filter(isDNA).length;
     if(charts.donut)charts.donut.destroy();
-    charts.donut=new Chart($('cDonut'),{type:'doughnut',data:{labels:['Answered','DNA'],datasets:[{data:[an,dn],backgroundColor:['#22c55e','#ef4444'],borderColor:'#1e293b',borderWidth:3,hoverOffset:5}]},options:{...CHART_OPT,responsive:true,cutout:'62%',plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{size:11},padding:12}}}}});
+    charts.donut=new Chart($('cDonut'),{type:'doughnut',data:{labels:['Answered','DNA'],datasets:[{data:[an,dn],backgroundColor:['#22c55e','#ef4444'],borderColor:'#1e293b',borderWidth:3,hoverOffset:5}]},options:{...CHART_OPT,responsive:true,cutout:'62%',onClick:(e,els)=>{if(!els.length)return;const lbl=['Answered','DNA'][els[0].index];const seg=lbl==='Answered'?rows.filter(isAns):rows.filter(isDNA);openDrill(lbl,seg);},plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{size:11},padding:12}},tooltip:{callbacks:{label:c=>`${c.label}: ${c.parsed} — click to drill`}}}}});
   }
   if(tab===1){
     const dc={};rows.forEach(r=>{const d=toISO(r.date);if(d)dc[d]=(dc[d]||0)+1;});
     const ds=Object.keys(dc).sort();
     if(charts.daily)charts.daily.destroy();
-    charts.daily=new Chart($('cDaily'),{type:'line',data:{labels:ds,datasets:[{data:ds.map(d=>dc[d]),borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.1)',tension:.3,fill:true,pointRadius:3,pointBackgroundColor:'#3b82f6'}]},options:{...CHART_OPT,responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#94a3b8',font:{size:9},maxRotation:45},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{color:'#334155'},beginAtZero:true}}}});
+    charts.daily=new Chart($('cDaily'),{type:'line',data:{labels:ds,datasets:[{data:ds.map(d=>dc[d]),borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.1)',tension:.3,fill:true,pointRadius:4,pointBackgroundColor:'#3b82f6',pointHoverRadius:7}]},options:{...CHART_OPT,responsive:true,onClick:(e,els)=>{if(!els.length)return;const day=ds[els[0].index];openDrill(`Calls on ${day}`,rows.filter(r=>toISO(r.date)===day));},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.parsed.y} calls — click to drill`}}},scales:{x:{ticks:{color:'#94a3b8',font:{size:9},maxRotation:45},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{color:'#334155'},beginAtZero:true}}}});
   }
   if(tab===2){
     const ht={},ha={};rows.forEach(r=>{const h=getHr(r.date);if(h===null)return;ht[h]=(ht[h]||0)+1;if(isAns(r))ha[h]=(ha[h]||0)+1;});
@@ -456,29 +594,30 @@ function buildTab(tab,rows){
     const rates=hrs.map(h=>ht[h]?Math.round((ha[h]||0)/ht[h]*100):null);
     const lbls=hrs.map(h=>{const p=h>=12?'PM':'AM';return`${h%12||12}${p}`;});
     if(charts.hourly)charts.hourly.destroy();
-    charts.hourly=new Chart($('cHourly'),{type:'bar',data:{labels:lbls,datasets:[{data:rates,backgroundColor:rates.map(r=>r===null?'transparent':r>=20?'rgba(34,197,94,.7)':r>=10?'rgba(245,158,11,.7)':'rgba(239,68,68,.55)'),borderRadius:4,borderSkipped:false}]},options:{...CHART_OPT,responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y===null?'No calls':`${c.parsed.y}% connect`,afterLabel:c=>{const h=c.dataIndex;return`${ht[h]||0} dials · ${ha[h]||0} answered`;}}}},scales:{x:{ticks:{color:'#94a3b8',font:{size:9}},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10},callback:v=>v+'%'},grid:{color:'#334155'},beginAtZero:true,max:100}}}});
+    charts.hourly=new Chart($('cHourly'),{type:'bar',data:{labels:lbls,datasets:[{data:rates,backgroundColor:rates.map(r=>r===null?'transparent':r>=20?'rgba(34,197,94,.7)':r>=10?'rgba(245,158,11,.7)':'rgba(239,68,68,.55)'),borderRadius:4,borderSkipped:false}]},options:{...CHART_OPT,responsive:true,onClick:(e,els)=>{if(!els.length)return;const hr=els[0].index;openDrill(`Calls at ${lbls[hr]}`,rows.filter(r=>getHr(r.date)===hr));},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y===null?'No calls':`${c.parsed.y}% connect — click to drill`,afterLabel:c=>{const h=c.dataIndex;return`${ht[h]||0} dials · ${ha[h]||0} answered`;}}}},scales:{x:{ticks:{color:'#94a3b8',font:{size:9}},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10},callback:v=>v+'%'},grid:{color:'#334155'},beginAtZero:true,max:100}}}});
   }
   if(tab===3){
     const cats={'Voicemail':0,'IVR/Screening':0,'Auto-Rejected':0,'Hung Up':0};
     rows.filter(isDNA).forEach(r=>{const c=dnaType(r)||'Voicemail';cats[c]=(cats[c]||0)+1;});
     const lbls=Object.keys(cats).filter(k=>cats[k]>0);
     if(charts.dna)charts.dna.destroy();
-    charts.dna=new Chart($('cDNA'),{type:'doughnut',data:{labels:lbls,datasets:[{data:lbls.map(k=>cats[k]),backgroundColor:['#64748b','#f59e0b','#ef4444','#94a3b8'],borderColor:'#1e293b',borderWidth:2,hoverOffset:5}]},options:{...CHART_OPT,responsive:true,cutout:'52%',plugins:{legend:{position:'right',labels:{color:'#94a3b8',font:{size:11},padding:10}}}}});
+    charts.dna=new Chart($('cDNA'),{type:'doughnut',data:{labels:lbls,datasets:[{data:lbls.map(k=>cats[k]),backgroundColor:['#64748b','#f59e0b','#ef4444','#94a3b8'],borderColor:'#1e293b',borderWidth:2,hoverOffset:5}]},options:{...CHART_OPT,responsive:true,cutout:'52%',onClick:(e,els)=>{if(!els.length)return;const cat=lbls[els[0].index];openDrill(`DNA: ${cat}`,rows.filter(r=>isDNA(r)&&(dnaType(r)||'Voicemail')===cat));},plugins:{legend:{position:'right',labels:{color:'#94a3b8',font:{size:11},padding:10}},tooltip:{callbacks:{label:c=>`${c.label}: ${c.parsed} — click to drill`}}}}});
   }
   if(tab===4){
     const byPhone={};
     [...rows].sort((a,b)=>new Date(a.date)-new Date(b.date)).forEach(r=>{const p=(r.phone||'').trim();if(!p)return;if(!byPhone[p])byPhone[p]=[];byPhone[p].push(r);});
-    const MAX=8;const at=[],aa=[];
-    for(let i=0;i<MAX;i++){at[i]=0;aa[i]=0;}
-    Object.values(byPhone).forEach(calls=>calls.forEach((r,i)=>{if(i<MAX){at[i]++;if(isAns(r))aa[i]++;}}));
+    const MAX=8;const at=[],aa=[],attemptRows=[];
+    for(let i=0;i<MAX;i++){at[i]=0;aa[i]=0;attemptRows[i]=[];}
+    Object.values(byPhone).forEach(calls=>calls.forEach((r,i)=>{if(i<MAX){at[i]++;attemptRows[i].push(r);if(isAns(r))aa[i]++;}}));
     const rates=at.map((t,i)=>t?Math.round(aa[i]/t*100):null);
     if(charts.att)charts.att.destroy();
-    charts.att=new Chart($('cAttempt'),{type:'line',data:{labels:at.map((_,i)=>`#${i+1}`),datasets:[{data:rates,borderColor:'#a855f7',backgroundColor:'rgba(168,85,247,.1)',tension:.3,fill:true,pointRadius:4,pointBackgroundColor:'#a855f7',spanGaps:true}]},options:{...CHART_OPT,responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y===null?'No data':`${c.parsed.y}% connect`,afterLabel:c=>{const i=c.dataIndex;return`${at[i]} dials · ${aa[i]} answered`;}}}},scales:{x:{ticks:{color:'#94a3b8',font:{size:10}},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10},callback:v=>v+'%'},grid:{color:'#334155'},beginAtZero:true,max:100}}}});
-    const dist={};Object.values(byPhone).forEach(c=>{const n=Math.min(c.length,10);dist[n]=(dist[n]||0)+1;});
+    charts.att=new Chart($('cAttempt'),{type:'line',data:{labels:at.map((_,i)=>`#${i+1}`),datasets:[{data:rates,borderColor:'#a855f7',backgroundColor:'rgba(168,85,247,.1)',tension:.3,fill:true,pointRadius:4,pointBackgroundColor:'#a855f7',spanGaps:true}]},options:{...CHART_OPT,responsive:true,onClick:(e,els)=>{if(!els.length)return;const idx=els[0].index;openDrill(`Attempt #${idx+1} calls`,attemptRows[idx]);},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y===null?'No data':`${c.parsed.y}% connect — click to drill`,afterLabel:c=>{const i=c.dataIndex;return`${at[i]} dials · ${aa[i]} answered`;}}}},scales:{x:{ticks:{color:'#94a3b8',font:{size:10}},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10},callback:v=>v+'%'},grid:{color:'#334155'},beginAtZero:true,max:100}}}});
+    const dist={};const distRows={};
+    Object.values(byPhone).forEach(c=>{const n=Math.min(c.length,10);dist[n]=(dist[n]||0)+1;if(!distRows[n])distRows[n]=[];distRows[n].push(...c);});
     const dl=Array.from({length:10},(_,i)=>i<9?`${i+1} dial${i>0?'s':''}`:'+10');
     const dd=Array.from({length:10},(_,i)=>dist[i+1]||0);
     if(charts.dist)charts.dist.destroy();
-    charts.dist=new Chart($('cDist'),{type:'bar',data:{labels:dl,datasets:[{data:dd,backgroundColor:'rgba(6,182,212,.6)',borderRadius:4,borderSkipped:false}]},options:{...CHART_OPT,responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#94a3b8',font:{size:9}},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{color:'#334155'},beginAtZero:true}}}});
+    charts.dist=new Chart($('cDist'),{type:'bar',data:{labels:dl,datasets:[{data:dd,backgroundColor:'rgba(6,182,212,.6)',borderRadius:4,borderSkipped:false}]},options:{...CHART_OPT,responsive:true,onClick:(e,els)=>{if(!els.length)return;const n=els[0].index+1;openDrill(`Leads with ${n}${n===10?'+':''} dial${n!==1?'s':''}`,distRows[n]||[]);},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.parsed.y} leads — click to drill`}}},scales:{x:{ticks:{color:'#94a3b8',font:{size:9}},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{color:'#334155'},beginAtZero:true}}}});
   }
 }
 
@@ -642,6 +781,7 @@ async function loadData(){
     filtered=[...all];
     chartBuilt={};
     updateKPIs(all);
+    buildSparklines(all);
     requestAnimationFrame(()=>buildTab(0,all)); // only build visible tab
     renderTable();
     renderLeads(all);
