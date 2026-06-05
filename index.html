@@ -149,6 +149,13 @@
     .pb:disabled{opacity:.35;cursor:not-allowed}
     .empty td{text-align:center;color:var(--muted);padding:36px;font-size:.85rem}
 
+    /* Section wrappers */
+    .dash-section{background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:18px 20px;margin-bottom:16px}
+    .dash-section-plain{padding:0;margin-bottom:0}
+    .filter-badge{font-size:.62rem;background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.25);border-radius:20px;padding:2px 8px;font-weight:600;margin-left:6px}
+    .table-section{background:rgba(255,255,255,.012);border:1px solid rgba(255,255,255,.05);border-radius:14px;padding:18px 20px;margin-top:16px}
+    .table-filter-note{font-size:.65rem;color:#64748b;margin-bottom:8px}
+
     /* Sparklines */
     .spark{display:block;width:100%;height:32px;margin-top:8px;opacity:.8}
     .spark-up{color:#22c55e}
@@ -231,16 +238,21 @@
 
 <main id="dash" style="display:none">
 
-  <!-- Quick ranges -->
-  <div class="ranges" id="qr" style="margin-top:4px">
-    <button class="pill on" onclick="setRange('today')">Today</button>
-    <button class="pill" onclick="setRange('7d')">Last 7 Days</button>
-    <button class="pill" onclick="setRange('30d')">Last 30 Days</button>
-    <button class="pill" onclick="setRange('all')">All Time</button>
-  </div>
+  <!-- Global filter section -->
+  <div class="dash-section">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <span style="font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600">🌐 Global Date Filter</span>
+      <span class="filter-badge">affects KPIs · Charts · Analytics · DNC</span>
+    </div>
+    <div class="ranges" id="qr">
+      <button class="pill on" onclick="setRange('today')">Today</button>
+      <button class="pill" onclick="setRange('7d')">Last 7 Days</button>
+      <button class="pill" onclick="setRange('30d')">Last 30 Days</button>
+      <button class="pill" onclick="setRange('all')">All Time</button>
+    </div>
 
-  <!-- KPIs -->
-  <div class="sec">📊 Performance</div>
+    <!-- KPIs -->
+    <div class="sec" style="margin-top:16px">📊 Performance</div>
   <div class="kpis">
     <div class="k" style="--accent:var(--blue)"><span class="k-icon">📞</span><div class="k-label">Total Dials<span class="kpi-tip" data-tip="Total outbound call attempts made by the AI in the selected period.">i</span></div><div class="k-val" id="kTotal">—</div><div class="k-sub">all attempts</div><svg class="spark" id="spkTotal" viewBox="0 0 100 32" preserveAspectRatio="none"></svg></div>
     <div class="k" style="--accent:var(--green)"><span class="k-icon">🎯</span><div class="k-label">Connect Rate<span class="kpi-tip" data-tip="% of dials where a human answered. Your north-star metric. Industry avg 8-12%. Above 20% = excellent.">i</span></div><div class="k-val" id="kCR">—</div><div class="k-sub" id="kCRs">answered/total</div><div id="kCRb"></div><svg class="spark" id="spkCR" viewBox="0 0 100 32" preserveAspectRatio="none"></svg></div>
@@ -291,14 +303,16 @@
     </div>
   </div>
 
+  </div><!-- end dash-section -->
+
   <!-- Call Log -->
-  <div class="sec">📋 Call Log</div>
+  <div class="table-section">
+  <div class="sec" style="margin-top:0">📋 Call Log</div>
+  <div class="table-filter-note">⚙ These filters apply to the call log table only — use the Global Date Filter above for KPIs &amp; charts</div>
   <div class="filters">
     <div class="fg"><label>Result</label>
       <select id="fRes"><option value="">All</option><option>DNA</option><option>DNC</option><option value="Call_later">Call Later</option><option value="Property Sold">Property Sold</option><option value="Not Interested">Not Interested</option><option value="Interested">Interested</option><option value="Scheduled Appointment">Scheduled Appointment</option></select>
     </div>
-    <div class="fg"><label>From</label><input type="date" id="fFrom"/></div>
-    <div class="fg"><label>To</label><input type="date" id="fTo"/></div>
     <div class="fg"><label>Phone</label><input type="text" id="fPhone" placeholder="search…" style="width:130px"/></div>
     <button class="clr" onclick="clearFilters()">✕ Clear</button>
   </div>
@@ -329,8 +343,11 @@
     </div>
   </div>
 
+  </div><!-- end table-section -->
+
   <!-- Lead Intelligence -->
-  <div class="sec">🔍 Lead Intelligence</div>
+  <div class="table-section" style="margin-top:16px">
+  <div class="sec" style="margin-top:0">🔍 Lead Intelligence</div>
   <div class="tcard">
     <div class="tbar">
       <span class="ttitle">By Lead (Phone)</span>
@@ -350,6 +367,7 @@
     <div style="padding:8px 16px;font-size:.72rem;color:var(--muted)" id="lCount"></div>
   </div>
 
+  </div><!-- end lead table-section -->
 </main>
 
 <!-- Full Detail Modal -->
@@ -408,7 +426,7 @@ const TZ='America/Chicago';
 const WASTED_THRESH=5;
 
 /* ── STATE ── */
-let all=[],filtered=[],page=1,pgSz=25,sField='date',sDir=-1,charts={},cdTimer,cdVal=60;
+let all=[],globalRows=[],filtered=[],page=1,pgSz=25,sField='date',sDir=-1,charts={},cdTimer,cdVal=60;
 let chartBuilt={};
 let leadsData=[];
 
@@ -667,6 +685,8 @@ function updateKPIs(rows){
   $('kWaste').textContent=wasted.toLocaleString();
 
   renderCompliance(violList);
+  // Also rebuild lead table with global rows
+  setTimeout(()=>renderLeads(rows),0);
 }
 
 /* ── COMPLIANCE (dynamic) ── */
@@ -738,7 +758,7 @@ function showTab(n){
   document.querySelectorAll('.chart-panel').forEach((p,i)=>{p.classList.toggle('on',i===n);});
   document.querySelectorAll('.ctab').forEach((t,i)=>{t.classList.toggle('on',i===n);});
   activeTab=n;
-  requestAnimationFrame(()=>buildTab(n,all));
+  requestAnimationFrame(()=>buildTab(n,globalRows.length?globalRows:all));
 }
 
 /* ── SORT ── */
@@ -761,37 +781,35 @@ function setRange(r){
   if(r==='today'){from=to=toISO(now.toISOString());}
   else if(r==='7d'){const d=new Date(now);d.setDate(d.getDate()-7);from=toISO(d.toISOString());}
   else if(r==='30d'){const d=new Date(now);d.setDate(d.getDate()-30);from=toISO(d.toISOString());}
-  $('fFrom').value=from; $('fTo').value=to;
+  // Update globalRows (affects KPIs, charts, DNC)
+  globalRows=all.filter(r=>{
+    const d=toISO(r.date);
+    if(from&&d&&d<from)return false;
+    if(to&&d&&d>to)return false;
+    return true;
+  });
+  // Recalculate everything that depends on global filter
+  setTimeout(()=>updateKPIs(globalRows),0);
+  setTimeout(()=>buildSparklines(globalRows),30);
+  setTimeout(()=>{
+    chartBuilt={};
+    requestAnimationFrame(()=>buildTab(activeTab,globalRows));
+  },60);
+  // Also re-apply table filters within new globalRows
   applyFilters();
 }
 
 function applyFilters(){
-  const res=$('fRes').value, df=$('fFrom').value, dt=$('fTo').value;
+  const res=$('fRes').value;
   const ph=($('fPhone').value||'').trim().replace(/\D/g,'');
-  filtered=all.filter(r=>{
+  // Table filters apply ON TOP of globalRows (not all)
+  const base=globalRows.length?globalRows:all;
+  filtered=base.filter(r=>{
     if(res&&(r.result||'').trim()!==res)return false;
-    const d=toISO(r.date);
-    if(df&&d&&d<df)return false;
-    if(dt&&d&&d>dt)return false;
     if(ph&&!(r.phone||'').replace(/\D/g,'').includes(ph))return false;
     return true;
   });
   page=1;renderTable();
-  // Recompute DNC compliance for active filter
-  const lmap={};
-  [...filtered].sort((a,b)=>new Date(a.date)-new Date(b.date)).forEach(r=>{
-    const p=(r.phone||'').trim();if(!p)return;
-    if(!lmap[p])lmap[p]={dncAt:null,calls:[]};
-    lmap[p].calls.push(r);
-    if((r.result||'').trim()==='DNC'&&!lmap[p].dncAt)lmap[p].dncAt=r.date;
-  });
-  const vl=[];
-  Object.entries(lmap).forEach(([phone,l])=>{
-    if(!l.dncAt)return;
-    const after=l.calls.filter(c=>c.date>l.dncAt&&c.result!=='DNC');
-    if(after.length)vl.push({phone,dncAt:l.dncAt,count:after.length});
-  });
-  renderCompliance(vl);
 }
 
 function clearFilters(){
@@ -946,7 +964,7 @@ async function loadData(){
 /* ── COUNTDOWN ── */
 function startCD(){
   clearInterval(cdTimer);cdVal=60;$('cd').textContent='60s';
-  cdTimer=setInterval(()=>{cdVal--;$('cd').textContent=cdVal+'s';if(cdVal<=0){clearInterval(cdTimer);loadData().then(()=>{startCD();setTimeout(()=>setRange('today'),200);});}},1000);
+  cdTimer=setInterval(()=>{cdVal--;$('cd').textContent=cdVal+'s';if(cdVal<=0){clearInterval(cdTimer);loadData().then(()=>{startCD();setRange('today');});}},1000);
 }
 
 /* ── LISTENERS ── */
