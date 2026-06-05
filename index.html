@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>Persistent Offer — AI Call Dashboard</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net"/>
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{
@@ -632,6 +632,7 @@ function showErr(m){$('sp').style.display='none';$('st').style.display='none';$(
 function showDash(){$('overlay').style.display='none';$('dash').style.display='block';}
 
 async function loadData(){
+  Chart.defaults.color='#94a3b8';Chart.defaults.borderColor='#334155';Chart.defaults.font.family="'Segoe UI',system-ui,sans-serif";
   showLoad();
   try{
     const result=await new Promise((res,rej)=>Papa.parse(CSV_URL,{download:true,header:true,skipEmptyLines:true,complete:res,error:rej}));
@@ -664,9 +665,7 @@ $('fRes').addEventListener('change',applyFilters);
 $('fFrom').addEventListener('change',applyFilters);
 $('fTo').addEventListener('change',applyFilters);
 $('fPhone').addEventListener('input',df);
-Chart.defaults.color='#94a3b8';Chart.defaults.borderColor='#334155';Chart.defaults.font.family="'Segoe UI',system-ui,sans-serif";
-
-window.addEventListener('DOMContentLoaded',()=>loadData().then(startCD));
+loadData().then(startCD);
 </script>
 </body>
 </html>
