@@ -4,8 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Persistent Offer — AI Call Dashboard</title>
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js" defer></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -188,7 +189,7 @@
 <!-- Header -->
 <header>
   <div class="brand">
-    <img src="data:image/png;base64,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" alt="Persistent Offer" />
+    <img src="logo.png" alt="Persistent Offer" />
     <span class="brand-sub">AI Call Intelligence Dashboard</span>
   </div>
   <div class="header-right">
@@ -598,30 +599,40 @@ function connectRateBadge(r){
   return'<span class="kpi-badge kpi-badge-bad">Low</span>';
 }
 
+/* ── DEBOUNCE ── */
+function debounce(fn,ms){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);}}
+
 /* ── CHARTS ── */
 const RESULT_COLORS={'dna':'#94a3b8','dnc':'#ef4444','call_later':'#f59e0b','property_sold':'#a855f7','not_interested':'#f87171','interested':'#60a5fa','scheduled_appointment':'#34d399'};
 function getResultColor(r){return RESULT_COLORS[resultKey(r)]||'#6366f1';}
 
+/* Staggered chart builder — renders one at a time to avoid blocking UI */
 function buildCharts(rows){
+  const tasks = [];
+  // Queue each chart as a separate task
+  tasks.push(()=>{
   // Results bar
   const resultCounts={};
   rows.forEach(r=>{const k=(r.result||'Unknown').trim();resultCounts[k]=(resultCounts[k]||0)+1;});
   const rLabels=Object.keys(resultCounts), rData=Object.values(resultCounts);
   if(charts.results)charts.results.destroy();
-  charts.results=new Chart($('chart-results'),{type:'bar',data:{labels:rLabels,datasets:[{data:rData,backgroundColor:rLabels.map(getResultColor),borderRadius:5,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.parsed.y} calls`}}},scales:{x:{ticks:{color:'#94a3b8',font:{size:10}},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{color:'#334155'},beginAtZero:true}}}});
-
+  charts.results=new Chart($('chart-results'),{type:'bar',data:{labels:rLabels,datasets:[{data:rData,backgroundColor:rLabels.map(getResultColor),borderRadius:5,borderSkipped:false}]},options:{responsive:true,animation:{duration:400},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.parsed.y} calls`}}},scales:{x:{ticks:{color:'#94a3b8',font:{size:10}},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{color:'#334155'},beginAtZero:true}}}});
+  });
+  tasks.push(()=>{
   // Daily line
   const dailyCounts={};
   rows.forEach(r=>{const d=toISODate(r.date);if(d)dailyCounts[d]=(dailyCounts[d]||0)+1;});
   const dSorted=Object.keys(dailyCounts).sort();
   if(charts.daily)charts.daily.destroy();
-  charts.daily=new Chart($('chart-daily'),{type:'line',data:{labels:dSorted,datasets:[{data:dSorted.map(d=>dailyCounts[d]),borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.12)',tension:.3,fill:true,pointBackgroundColor:'#3b82f6',pointRadius:3}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#94a3b8',font:{size:9},maxRotation:45},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{color:'#334155'},beginAtZero:true}}}});
-
+  charts.daily=new Chart($('chart-daily'),{type:'line',data:{labels:dSorted,datasets:[{data:dSorted.map(d=>dailyCounts[d]),borderColor:'#3b82f6',backgroundColor:'rgba(59,130,246,.12)',tension:.3,fill:true,pointBackgroundColor:'#3b82f6',pointRadius:3}]},options:{responsive:true,animation:{duration:400},plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#94a3b8',font:{size:9},maxRotation:45},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{color:'#334155'},beginAtZero:true}}}});
+  });
+  tasks.push(()=>{
   // Donut
   const answeredC=rows.filter(isAnswered).length, dnaC=rows.filter(isDNA).length;
   if(charts.donut)charts.donut.destroy();
-  charts.donut=new Chart($('chart-donut'),{type:'doughnut',data:{labels:['Answered','DNA'],datasets:[{data:[answeredC,dnaC],backgroundColor:['#22c55e','#ef4444'],borderColor:'#1e293b',borderWidth:3,hoverOffset:6}]},options:{responsive:true,cutout:'65%',plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{size:11},padding:14}},tooltip:{callbacks:{label:c=>` ${c.label}: ${c.parsed} (${rows.length?Math.round(c.parsed/rows.length*100):0}%)`}}}}});
-
+  charts.donut=new Chart($('chart-donut'),{type:'doughnut',data:{labels:['Answered','DNA'],datasets:[{data:[answeredC,dnaC],backgroundColor:['#22c55e','#ef4444'],borderColor:'#1e293b',borderWidth:3,hoverOffset:6}]},options:{responsive:true,animation:{duration:400},cutout:'65%',plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',font:{size:11},padding:14}},tooltip:{callbacks:{label:c=>` ${c.label}: ${c.parsed} (${rows.length?Math.round(c.parsed/rows.length*100):0}%)`}}}}});
+  });
+  tasks.push(()=>{
   // Connect rate by hour
   const hourTotal={}, hourAnswered={};
   rows.forEach(r=>{const h=getHour(r.date);if(h===null)return;hourTotal[h]=(hourTotal[h]||0)+1;if(isAnswered(r))hourAnswered[h]=(hourAnswered[h]||0)+1;});
@@ -629,16 +640,18 @@ function buildCharts(rows){
   const hourRates=hours.map(h=>hourTotal[h]?Math.round((hourAnswered[h]||0)/hourTotal[h]*100):null);
   const hourLabels=hours.map(h=>{const ampm=h>=12?'PM':'AM';const h12=h%12||12;return`${h12}${ampm}`;});
   if(charts.hourly)charts.hourly.destroy();
-  charts.hourly=new Chart($('chart-hourly'),{type:'bar',data:{labels:hourLabels,datasets:[{label:'Connect Rate %',data:hourRates,backgroundColor:hourRates.map(r=>r===null?'rgba(0,0,0,0)':r>=20?'rgba(34,197,94,.7)':r>=10?'rgba(245,158,11,.7)':'rgba(239,68,68,.6)'),borderRadius:4,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y===null?'No calls':`${c.parsed.y}% connect rate`,afterLabel:c=>{const h=c.dataIndex;return`${hourTotal[h]||0} dials, ${hourAnswered[h]||0} answered`;}}}},scales:{x:{ticks:{color:'#94a3b8',font:{size:9}},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10},callback:v=>v+'%'},grid:{color:'#334155'},beginAtZero:true,max:100}}}});
-
+  charts.hourly=new Chart($('chart-hourly'),{type:'bar',data:{labels:hourLabels,datasets:[{label:'Connect Rate %',data:hourRates,backgroundColor:hourRates.map(r=>r===null?'rgba(0,0,0,0)':r>=20?'rgba(34,197,94,.7)':r>=10?'rgba(245,158,11,.7)':'rgba(239,68,68,.6)'),borderRadius:4,borderSkipped:false}]},options:{responsive:true,animation:{duration:400},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y===null?'No calls':`${c.parsed.y}% connect rate`,afterLabel:c=>{const h=c.dataIndex;return`${hourTotal[h]||0} dials, ${hourAnswered[h]||0} answered`;}}}},scales:{x:{ticks:{color:'#94a3b8',font:{size:9}},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10},callback:v=>v+'%'},grid:{color:'#334155'},beginAtZero:true,max:100}}}});
+  });
+  tasks.push(()=>{
   // DNA breakdown
   const dnaCats={'Voicemail':0,'IVR/Screening':0,'Auto-Rejected':0,'Hung Up / Short':0};
   rows.filter(isDNA).forEach(r=>{const c=classifyDNA(r)||'Voicemail';dnaCats[c]=(dnaCats[c]||0)+1;});
   const dnaLabels=Object.keys(dnaCats).filter(k=>dnaCats[k]>0);
   const dnaData=dnaLabels.map(k=>dnaCats[k]);
   if(charts.dna)charts.dna.destroy();
-  charts.dna=new Chart($('chart-dna'),{type:'doughnut',data:{labels:dnaLabels,datasets:[{data:dnaData,backgroundColor:['#64748b','#f59e0b','#ef4444','#94a3b8'],borderColor:'#1e293b',borderWidth:2,hoverOffset:6}]},options:{responsive:true,cutout:'55%',plugins:{legend:{position:'right',labels:{color:'#94a3b8',font:{size:11},padding:12}},tooltip:{callbacks:{label:c=>` ${c.label}: ${c.parsed} calls`}}}}});
-
+  charts.dna=new Chart($('chart-dna'),{type:'doughnut',data:{labels:dnaLabels,datasets:[{data:dnaData,backgroundColor:['#64748b','#f59e0b','#ef4444','#94a3b8'],borderColor:'#1e293b',borderWidth:2,hoverOffset:6}]},options:{responsive:true,animation:{duration:400},cutout:'55%',plugins:{legend:{position:'right',labels:{color:'#94a3b8',font:{size:11},padding:12}},tooltip:{callbacks:{label:c=>` ${c.label}: ${c.parsed} calls`}}}}});
+  });
+  tasks.push(()=>{
   // Connect rate by attempt #
   const attemptPhones={};
   const sortedByDate=[...rows].sort((a,b)=>new Date(a.date)-new Date(b.date));
@@ -656,8 +669,9 @@ function buildCharts(rows){
   });
   const attemptRates=attemptTotal.map((t,i)=>t?Math.round(attemptAnswered[i]/t*100):null);
   if(charts.attempt)charts.attempt.destroy();
-  charts.attempt=new Chart($('chart-attempt'),{type:'line',data:{labels:attemptTotal.map((_,i)=>`Attempt ${i+1}`),datasets:[{label:'Connect Rate %',data:attemptRates,borderColor:'#a855f7',backgroundColor:'rgba(168,85,247,.1)',tension:.3,fill:true,pointBackgroundColor:'#a855f7',pointRadius:4,spanGaps:true}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y===null?'No data':`${c.parsed.y}% connect`,afterLabel:c=>{const i=c.dataIndex;return`${attemptTotal[i]} dials, ${attemptAnswered[i]} answered`;}}}},scales:{x:{ticks:{color:'#94a3b8',font:{size:9}},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10},callback:v=>v+'%'},grid:{color:'#334155'},beginAtZero:true,max:100}}}});
-
+  charts.attempt=new Chart($('chart-attempt'),{type:'line',data:{labels:attemptTotal.map((_,i)=>`Attempt ${i+1}`),datasets:[{label:'Connect Rate %',data:attemptRates,borderColor:'#a855f7',backgroundColor:'rgba(168,85,247,.1)',tension:.3,fill:true,pointBackgroundColor:'#a855f7',pointRadius:4,spanGaps:true}]},options:{responsive:true,animation:{duration:400},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y===null?'No data':`${c.parsed.y}% connect`,afterLabel:c=>{const i=c.dataIndex;return`${attemptTotal[i]} dials, ${attemptAnswered[i]} answered`;}}}},scales:{x:{ticks:{color:'#94a3b8',font:{size:9}},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10},callback:v=>v+'%'},grid:{color:'#334155'},beginAtZero:true,max:100}}}});
+  });
+  tasks.push(()=>{
   // Attempts distribution (histogram)
   const attemptDist={};
   Object.values(attemptPhones).forEach(calls=>{
@@ -667,7 +681,10 @@ function buildCharts(rows){
   const distLabels=Array.from({length:10},(_,i)=>i+1+'+'[i===9?0:1]||String(i+1)).map((_,i)=>i<9?`${i+1} dial${i===0?'':'s'}`:'10+ dials');
   const distData=Array.from({length:10},(_,i)=>attemptDist[i+1]||0);
   if(charts.attemptsDist)charts.attemptsDist.destroy();
-  charts.attemptsDist=new Chart($('chart-attempts-dist'),{type:'bar',data:{labels:distLabels,datasets:[{label:'Leads',data:distData,backgroundColor:'rgba(6,182,212,.6)',borderRadius:4,borderSkipped:false}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.parsed.y} lead${c.parsed.y!==1?'s':''}`}}},scales:{x:{ticks:{color:'#94a3b8',font:{size:9}},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{color:'#334155'},beginAtZero:true}}}});
+  charts.attemptsDist=new Chart($('chart-attempts-dist'),{type:'bar',data:{labels:distLabels,datasets:[{label:'Leads',data:distData,backgroundColor:'rgba(6,182,212,.6)',borderRadius:4,borderSkipped:false}]},options:{responsive:true,animation:{duration:400},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.parsed.y} lead${c.parsed.y!==1?'s':''}`}}},scales:{x:{ticks:{color:'#94a3b8',font:{size:9}},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{color:'#334155'},beginAtZero:true}}}});
+  });
+  // Run tasks staggered so UI thread isn't blocked
+  tasks.forEach((task,i)=>setTimeout(task, i*80));
 }
 
 /* ── LEAD TABLE ── */
@@ -780,6 +797,7 @@ function changePageSize(){pageSize=parseInt($('page-size-select').value,10);curr
 
 /* ── TABLE ── */
 function renderTable(){
+  // Use DocumentFragment for fast DOM insertion
   const total=filteredRows.length;
   const pages=Math.max(1,Math.ceil(total/pageSize));
   currentPage=Math.min(currentPage,pages);
@@ -789,7 +807,9 @@ function renderTable(){
   $('page-info').textContent=`Page ${currentPage} of ${pages} · ${total} rows`;
   const tbody=$('table-body');
   if(!slice.length){tbody.innerHTML='<tr class="empty-row"><td colspan="8">No calls match current filters.</td></tr>';renderPagination(pages);return;}
-  tbody.innerHTML=slice.map((r,i)=>{
+  const frag=document.createDocumentFragment();
+  slice.forEach((r,i)=>{
+    const absIdx_=start+i;
     const absIdx=start+i;
     const recUrl=(r.recording||'').trim();
     const recHtml=recUrl?`<button onclick="openAudioPlayer('${recUrl.replace(/'/g,"\\'")}')" style="background:var(--blue);border:none;color:#fff;padding:3px 10px;border-radius:6px;cursor:pointer;font-size:.75rem">▶ Play</button>`:'<span style="color:var(--muted);font-size:.75rem">—</span>';
@@ -797,17 +817,13 @@ function renderTable(){
     const hasFull=(r.transcript||'').trim().length>110;
     const transcriptHtml=r.transcript?`<span class="transcript-short">${escHtml(trunc)}${hasFull?'…':''}</span>${hasFull?`<button class="expand-btn" onclick="openModal(${absIdx})">Expand ↗</button>`:'`'}` :'<span style="color:var(--muted);font-size:.75rem">—</span>';
     const dnaType=isDNA(r)?classifyDNA(r):'';
-    return`<tr class="${rowClass(r.result)}">
-      <td style="white-space:nowrap;font-size:.78rem">${fmtDateTime(r.date)}</td>
-      <td style="font-family:monospace;font-size:.78rem">${escHtml(r.phone||'—')}</td>
-      <td>${dirBadge(r.direction)}</td>
-      <td style="font-variant-numeric:tabular-nums">${fmtDuration(r.duration)}</td>
-      <td>${badgeHtml((r.result||'').trim())}</td>
-      <td>${dnaBadgeHtml(dnaType)}</td>
-      <td>${recHtml}</td>
-      <td class="transcript-cell">${transcriptHtml}</td>
-    </tr>`;
-  }).join('');
+    const tr=document.createElement('tr');
+    tr.className=rowClass(r.result);
+    tr.innerHTML=`<td style="white-space:nowrap;font-size:.78rem">${fmtDateTime(r.date)}</td><td style="font-family:monospace;font-size:.78rem">${escHtml(r.phone||'—')}</td><td>${dirBadge(r.direction)}</td><td style="font-variant-numeric:tabular-nums">${fmtDuration(r.duration)}</td><td>${badgeHtml((r.result||'').trim())}</td><td>${dnaBadgeHtml(dnaType)}</td><td>${recHtml}</td><td class="transcript-cell">${transcriptHtml}</td>`;
+    frag.appendChild(tr);
+  });
+  tbody.innerHTML='';
+  tbody.appendChild(frag);
   renderPagination(pages);
 }
 
@@ -890,10 +906,11 @@ function startCountdown(){
 }
 
 /* ── LISTENERS ── */
+const debouncedFilter=debounce(applyFilters,150);
 $('filter-result').addEventListener('change',applyFilters);
 $('filter-date-from').addEventListener('change',applyFilters);
 $('filter-date-to').addEventListener('change',applyFilters);
-$('filter-phone').addEventListener('input',applyFilters);
+$('filter-phone').addEventListener('input',debouncedFilter);
 Chart.defaults.color='#94a3b8';Chart.defaults.borderColor='#334155';Chart.defaults.font.family="'Segoe UI',system-ui,sans-serif";
 
 loadData().then(()=>startCountdown());
