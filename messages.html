@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Persistent Offer — AI Text Dashboard</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#0f172a;--surface:#1e293b;--surface2:#263348;--border:#334155;
+      --blue:#3b82f6;--green:#22c55e;--red:#ef4444;--yellow:#f59e0b;
+      --purple:#a855f7;--cyan:#06b6d4;--orange:#f97316;
+      --text:#f1f5f9;--muted:#94a3b8;--r:10px;
+    }
+    html{font-size:15px}
+    body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.5;min-height:100vh}
+
+    /* Header */
+    header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+    .brand{display:flex;align-items:center;gap:12px}
+    .brand img{height:36px;width:auto}
+    .brand-sub{font-size:.68rem;color:var(--muted);display:block}
+    .header-right{display:flex;align-items:center;gap:10px}
+    .hbtn{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:5px 12px;font-size:.78rem;cursor:pointer;white-space:nowrap;text-decoration:none;display:inline-flex;align-items:center;gap:5px}
+    .hbtn:hover{border-color:var(--blue);color:var(--blue)}
+    .hbtn.active{border-color:var(--blue);color:var(--blue);background:rgba(59,130,246,.1)}
+    .refresh-badge{font-size:.72rem;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:3px 10px;display:flex;align-items:center;gap:5px}
+    .dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+    /* Layout */
+    main{max-width:1300px;margin:0 auto;padding:20px 16px 48px}
+
+    /* State overlay */
+    #overlay{position:fixed;inset:60px 0 0;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;z-index:50}
+    .spinner{width:44px;height:44px;border:4px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .err-box{background:var(--surface);border:1px solid var(--red);border-radius:var(--r);padding:24px 28px;max-width:520px;text-align:center}
+    .err-box h2{color:var(--red);margin-bottom:8px}
+    .err-box p,.err-box ol{color:var(--muted);font-size:.85rem;line-height:1.7}
+    .err-box ol{text-align:left;padding-left:18px;margin-top:8px}
+    .retry{background:var(--blue);color:#fff;border:none;border-radius:6px;padding:7px 18px;cursor:pointer;font-size:.85rem;font-weight:600;margin-top:12px}
+
+    /* Section titles */
+    .sec{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;margin:24px 0 10px;display:flex;align-items:center;gap:8px}
+    .sec::after{content:'';flex:1;height:1px;background:var(--border)}
+
+    /* Quick range */
+    .ranges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+    .pill{background:var(--surface2);border:1px solid var(--border);color:var(--muted);border-radius:20px;padding:3px 12px;font-size:.72rem;font-weight:600;cursor:pointer;transition:all .12s}
+    .pill:hover{border-color:var(--blue);color:var(--text)}
+    .pill.on{background:var(--blue);border-color:var(--blue);color:#fff}
+
+    /* KPI grid */
+    .kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px}
+    .k{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;position:relative;overflow:hidden;transition:transform .12s}
+    .k:hover{transform:translateY(-2px)}
+    .k::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent,var(--blue));border-radius:var(--r) var(--r) 0 0}
+    .k-icon{position:absolute;right:12px;top:12px;font-size:1.2rem;opacity:.18}
+    .k-label{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+    .k-val{font-size:1.75rem;font-weight:700;line-height:1.1;margin:3px 0 2px;font-variant-numeric:tabular-nums}
+    .k-sub{font-size:.65rem;color:var(--muted)}
+    .badge{display:inline-block;font-size:.62rem;font-weight:700;padding:1px 6px;border-radius:20px;margin-top:3px}
+    .good{background:rgba(34,197,94,.15);color:#22c55e}
+    .warn{background:rgba(245,158,11,.15);color:#f59e0b}
+    .bad{background:rgba(239,68,68,.15);color:#ef4444}
+
+    /* Chart tabs */
+    .chart-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:16px;flex-wrap:wrap}
+    .ctab{background:none;border:none;color:var(--muted);font-size:.78rem;font-weight:600;padding:8px 16px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .12s;white-space:nowrap}
+    .ctab:hover{color:var(--text)}
+    .ctab.on{color:var(--blue);border-bottom-color:var(--blue)}
+    .chart-panel{display:none}
+    .chart-panel.on{display:block}
+    .chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;text-align:center}
+    .chart-card h3{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600;margin-bottom:14px;text-align:center}
+    .chart-wrap{position:relative;width:100%;max-width:860px;margin:0 auto}
+    .chart-wrap-sm{position:relative;width:100%;max-width:380px;margin:0 auto}
+    .charts-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media(max-width:700px){.charts-2{grid-template-columns:1fr}}
+
+    /* Filters */
+    .filters{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px}
+    .fg{display:flex;flex-direction:column;gap:4px}
+    .fg label{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+    .fg select,.fg input{background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:5px 9px;font-size:.8rem;outline:none}
+    .fg select:focus,.fg input:focus{border-color:var(--blue)}
+    .fg select option{background:var(--surface2)}
+    .clr{background:var(--surface2);color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:.8rem;cursor:pointer;align-self:flex-end}
+    .clr:hover{color:var(--text);border-color:var(--blue)}
+
+    /* Table */
+    .tcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
+    .tbar{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px}
+    .ttitle{font-size:.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+    .tscroll{overflow-x:auto}
+    table{width:100%;border-collapse:collapse;font-size:.78rem}
+    thead th{background:var(--bg);color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:.65rem;padding:8px 14px;text-align:left;white-space:nowrap;cursor:pointer;user-select:none}
+    thead th:hover{color:var(--text)}
+    thead th.sa::after{content:' ↑';color:var(--blue)}
+    thead th.sd::after{content:' ↓';color:var(--blue)}
+    tbody tr{border-top:1px solid var(--border);transition:background .1s;cursor:pointer}
+    tbody tr:hover{background:var(--surface2)}
+    tbody td{padding:8px 14px;vertical-align:middle}
+    tbody tr.din{border-left:3px solid #22c55e}
+    tbody tr.dout{border-left:3px solid #3b82f6}
+
+    /* Direction + status badges */
+    .db{font-size:.65rem;padding:2px 7px;border-radius:4px;font-weight:600;text-transform:uppercase}
+    .di{background:#1a2e1a;color:#86efac}
+    .do{background:#1e3a5f;color:#60a5fa}
+    .tag{display:inline-block;border-radius:20px;padding:1px 7px;font-size:.6rem;font-weight:700;white-space:nowrap;background:#1e293b;color:#94a3b8;border:1px solid #334155;margin:1px 2px 1px 0}
+    .tag.dnc{background:#450a0a;color:#ef4444;border-color:#7f1d1d}
+    .tag.dna{background:#1e293b;color:#94a3b8;border-color:#475569}
+    .tag.interested{background:#0c1a4a;color:#93c5fd;border-color:#1e3a8a}
+    .tag.appt{background:#042f2e;color:#34d399;border-color:#065f46}
+    .unread{display:inline-block;min-width:18px;height:18px;line-height:18px;text-align:center;background:var(--red);color:#fff;border-radius:9px;font-size:.62rem;font-weight:700;padding:0 5px}
+    .snip{max-width:320px;color:var(--muted);font-size:.74rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+    /* Pagination */
+    .pag{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:10px 16px;border-top:1px solid var(--border);flex-wrap:wrap}
+    .pagl{display:flex;align-items:center;gap:8px}
+    .pagr{display:flex;align-items:center;gap:4px}
+    .psz{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:3px 6px;font-size:.72rem}
+    .pi{font-size:.72rem;color:var(--muted)}
+    .pb{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:5px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:.72rem;font-weight:600}
+    .pb:hover:not(:disabled){background:var(--blue);border-color:var(--blue)}
+    .pb.on{background:var(--blue);border-color:var(--blue)}
+    .pb:disabled{opacity:.35;cursor:not-allowed}
+    .empty td{text-align:center;color:var(--muted);padding:36px;font-size:.85rem}
+
+    /* Section wrappers */
+    .dash-section{background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:18px 20px;margin-bottom:16px}
+    .filter-badge{font-size:.62rem;background:rgba(59,130,246,.12);color:#60a5fa;border:1px solid rgba(59,130,246,.25);border-radius:20px;padding:2px 8px;font-weight:600;margin-left:6px}
+    .table-section{background:rgba(255,255,255,.012);border:1px solid rgba(255,255,255,.05);border-radius:14px;padding:18px 20px;margin-top:16px}
+    .table-filter-note{font-size:.65rem;color:#64748b;margin-bottom:8px}
+
+    /* Thread modal (SMS bubbles) */
+    .mover{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px}
+    .modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;max-width:620px;width:100%;max-height:88vh;display:flex;flex-direction:column}
+    .mh{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--border);gap:10px}
+    .mt{font-weight:700;font-size:.9rem}
+    .mt small{display:block;font-weight:400;font-size:.72rem;color:var(--muted)}
+    .mc{background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;line-height:1}
+    .mc:hover{color:var(--text)}
+    .mhead-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .ghl-btn{background:#7c3aed;border:none;color:#fff;border-radius:6px;padding:6px 13px;cursor:pointer;font-size:.76rem;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+    .mb{padding:16px 18px;overflow-y:auto;background:#0b1220;flex:1;display:flex;flex-direction:column;gap:10px}
+    .bubble{max-width:78%;padding:9px 13px;border-radius:14px;font-size:.84rem;line-height:1.5;word-break:break-word;position:relative}
+    .bubble .meta{font-size:.62rem;opacity:.65;margin-top:5px;display:block}
+    .b-in{align-self:flex-start;background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-bottom-left-radius:4px}
+    .b-out{align-self:flex-end;background:#1d4ed8;color:#fff;border-bottom-right-radius:4px}
+    .b-call{align-self:center;background:transparent;color:#64748b;font-size:.7rem;border:1px dashed #334155;border-radius:20px;padding:4px 12px;max-width:90%;text-align:center}
+    .b-status{font-size:.58rem}
+    .thread-loading{display:flex;align-items:center;justify-content:center;padding:40px;color:var(--muted)}
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <img src="logo.png" alt="Persistent Offer"/>
+    <span class="brand-sub">AI Text Intelligence</span>
+  </div>
+  <div class="header-right">
+    <a class="hbtn" href="index.html">📞 Calls</a>
+    <a class="hbtn active" href="messages.html">💬 Texts</a>
+    <span style="font-size:.68rem;color:var(--muted)" id="lu"></span>
+    <div class="refresh-badge"><div class="dot"></div><span id="cd">30s</span></div>
+  </div>
+</header>
+
+<div id="overlay">
+  <div class="spinner" id="sp"></div>
+  <div style="color:var(--muted);font-size:.88rem" id="st">Loading conversations from GHL…</div>
+  <div class="err-box" id="eb" style="display:none">
+    <h2>⚠️ Unable to Load Data</h2>
+    <p id="em">Could not reach the GHL Conversations API.</p>
+    <button class="retry" onclick="loadData(true)">↺ Retry</button>
+  </div>
+</div>
+
+<main id="dash" style="display:none">
+
+  <!-- Global filter section -->
+  <div class="dash-section">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <span style="font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600">🌐 Global Date Filter</span>
+      <span class="filter-badge">affects KPIs · Charts · Table</span>
+    </div>
+    <div class="ranges" id="qr">
+      <button class="pill" onclick="setRange('today')">Today</button>
+      <button class="pill on" onclick="setRange('7d')">Last 7 Days</button>
+      <button class="pill" onclick="setRange('30d')">Last 30 Days</button>
+      <button class="pill" onclick="setRange('all')">All Time</button>
+    </div>
+
+    <!-- KPIs -->
+    <div class="sec" style="margin-top:16px">📊 Engagement</div>
+  <div class="kpis">
+    <div class="k" style="--accent:var(--blue)"><span class="k-icon">💬</span><div class="k-label">Conversations</div><div class="k-val" id="kConv">—</div><div class="k-sub">SMS threads active</div></div>
+    <div class="k" style="--accent:var(--green)"><span class="k-icon">↩️</span><div class="k-label">Lead Replied</div><div class="k-val" id="kReplied">—</div><div class="k-sub" id="kRepliedS">last msg inbound</div></div>
+    <div class="k" style="--accent:var(--cyan)"><span class="k-icon">📈</span><div class="k-label">Reply Rate</div><div class="k-val" id="kRR">—</div><div class="k-sub">of conversations</div><div id="kRRb"></div></div>
+    <div class="k" style="--accent:var(--yellow)"><span class="k-icon">⏳</span><div class="k-label">Awaiting Reply</div><div class="k-val" id="kAwait">—</div><div class="k-sub">we texted last</div></div>
+    <div class="k" style="--accent:var(--red)"><span class="k-icon">🔴</span><div class="k-label">Unread</div><div class="k-val" id="kUnread">—</div><div class="k-sub">unread inbound</div></div>
+    <div class="k" style="--accent:var(--purple)"><span class="k-icon">🆕</span><div class="k-label">Inbound Today</div><div class="k-val" id="kInToday">—</div><div class="k-sub">replies today</div></div>
+    <div class="k" style="--accent:#34d399"><span class="k-icon">✅</span><div class="k-label">Interested</div><div class="k-val" id="kInterested">—</div><div class="k-sub">tagged interested</div></div>
+    <div class="k" style="--accent:#f97316"><span class="k-icon">🚫</span><div class="k-label">DNC Tagged</div><div class="k-val" id="kDNC">—</div><div class="k-sub">do-not-contact</div></div>
+  </div>
+
+  <div id="noDataMsg" style="display:none;align-items:center;justify-content:center;padding:32px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;margin:12px 0;gap:12px;flex-direction:column">
+    <span style="font-size:2rem">📭</span>
+    <span style="color:var(--muted);font-size:.9rem">No conversations found for this date range</span>
+    <button onclick="setRange('all')" style="background:var(--blue);border:none;color:#fff;border-radius:6px;padding:6px 16px;cursor:pointer;font-size:.82rem">View All Time</button>
+  </div>
+
+  <!-- Charts -->
+  <div class="sec">📈 Analytics</div>
+  <div class="chart-tabs">
+    <button class="ctab on" onclick="showTab(0)">Direction</button>
+    <button class="ctab" onclick="showTab(1)">Daily Volume</button>
+    <button class="ctab" onclick="showTab(2)">Hourly Activity</button>
+    <button class="ctab" onclick="showTab(3)">Tag Breakdown</button>
+  </div>
+  <div class="chart-panel on" id="tab0">
+    <div class="charts-2">
+      <div class="chart-card"><h3>Last Message Direction</h3><div class="chart-wrap-sm"><canvas id="cDir" height="240"></canvas></div></div>
+      <div class="chart-card"><h3>Read vs Unread</h3><div class="chart-wrap-sm"><canvas id="cRead" height="240"></canvas></div></div>
+    </div>
+  </div>
+  <div class="chart-panel" id="tab1">
+    <div class="chart-card"><h3>Conversations Active per Day <span style="font-size:.65rem;font-weight:400;color:#64748b">(by last message)</span></h3><div class="chart-wrap"><canvas id="cDaily" height="240"></canvas></div></div>
+  </div>
+  <div class="chart-panel" id="tab2">
+    <div class="chart-card"><h3>Activity by Hour of Day <span style="font-size:.65rem;font-weight:400;color:#64748b">(Central Time)</span></h3><div class="chart-wrap"><canvas id="cHourly" height="240"></canvas></div></div>
+  </div>
+  <div class="chart-panel" id="tab3">
+    <div class="chart-card"><h3>Conversations by Tag</h3><div class="chart-wrap-sm"><canvas id="cTags" height="280"></canvas></div></div>
+  </div>
+
+  </div><!-- end dash-section -->
+
+  <!-- Conversation Log -->
+  <div class="table-section">
+  <div class="sec" style="margin-top:0">📋 Conversations</div>
+  <div class="table-filter-note">⚙ These filters apply to the table only — use the Global Date Filter above for KPIs &amp; charts. Click any row to open the full text thread.</div>
+  <div class="filters">
+    <div class="fg"><label>Last Direction</label>
+      <select id="fDir"><option value="">All</option><option value="inbound">Inbound (lead replied)</option><option value="outbound">Outbound (we texted)</option></select>
+    </div>
+    <div class="fg"><label>Status</label>
+      <select id="fUnread"><option value="">All</option><option value="unread">Unread only</option></select>
+    </div>
+    <div class="fg"><label>Search</label><input type="text" id="fQ" placeholder="name or phone…" style="width:160px"/></div>
+    <button class="clr" onclick="clearFilters()">✕ Clear</button>
+  </div>
+  <div class="tcard">
+    <div class="tbar"><span class="ttitle">Recent Conversations</span><span class="pi" id="rCount"></span></div>
+    <div class="tscroll">
+      <table>
+        <thead><tr>
+          <th onclick="sortBy('lastMessageDate')">Last Msg</th>
+          <th onclick="sortBy('contactName')">Contact</th>
+          <th onclick="sortBy('phone')">Phone</th>
+          <th>Dir</th>
+          <th>Last Message</th>
+          <th>Tags</th>
+          <th style="text-align:center">Unread</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="pag" id="pag">
+      <div class="pagl">
+        <label class="pi">Rows:</label>
+        <select class="psz" id="psz" onchange="chgPgSz()"><option value="25">25</option><option value="50">50</option><option value="100">100</option></select>
+        <span class="pi" id="pi"></span>
+      </div>
+      <div class="pagr" id="pgbtns"></div>
+    </div>
+  </div>
+  </div><!-- end table-section -->
+</main>
+
+<!-- Thread Modal -->
+<div class="mover" id="modal" style="display:none" onclick="if(event.target===this)closeThread()">
+  <div class="modal">
+    <div class="mh">
+      <span class="mt" id="mTitle">Conversation<small id="mSub"></small></span>
+      <div class="mhead-actions">
+        <button class="ghl-btn" id="ghlBtn" onclick="openInGHL(this)">🔗 View in GHL</button>
+        <button class="mc" onclick="closeThread()">✕</button>
+      </div>
+    </div>
+    <div class="mb" id="mBody"></div>
+  </div>
+</div>
+
+<script>
+/* ── CONFIG ── */
+const GHL_API_KEY = window.GHL_API_KEY || 'pit-aada4ab5-d3fa-488b-82a8-7d79f0f01230';
+const GHL_LOCATION_ID = window.GHL_LOCATION_ID || 'uih3vSBoGdAeWMpNJ7qO';
+const API='https://services.leadconnectorhq.com';
+const HEADERS={'Authorization':`Bearer ${GHL_API_KEY}`,'Version':'2021-04-15','Content-Type':'application/json'};
+const TZ='America/Chicago';
+const POLL_MS=30000;          // refresh every 30s
+const PAGE_LIMIT=100;         // GHL max page size
+const MAX_PAGES=30;           // safety cap (≈3000 conversations / poll)
+
+/* ── STATE ── */
+let convMap={}, all=[], filtered=[], page=1, pgSz=25, sField='lastMessageDate', sDir=-1;
+let range='7d', charts={}, cdTimer, cdVal=30, polling=false, activeConv=null;
+
+/* ── UTILS ── */
+const $=id=>document.getElementById(id);
+const dbn=(fn,ms)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);}};
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const isInbound=c=>(c.lastMessageDirection||'').toLowerCase()==='inbound';
+const toISODay=ms=>{if(!ms)return'';const d=new Date(ms);if(isNaN(d))return'';return new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'}).format(d);};
+const getHr=ms=>{if(!ms)return null;const d=new Date(ms);if(isNaN(d))return null;return+new Intl.DateTimeFormat('en-US',{timeZone:TZ,hour:'numeric',hour12:false}).format(d);};
+const fmtDT=ms=>{if(!ms)return'—';const d=new Date(ms);if(isNaN(d))return'—';return d.toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',hour12:true,timeZone:TZ});};
+const fmtTime=iso=>{const d=new Date(iso);if(isNaN(d))return'';return d.toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',hour12:true,timeZone:TZ});};
+const displayName=c=>(c.fullName||c.contactName||'').trim()||'Unknown';
+
+/* ── DATE WINDOW ── */
+// minutes Central is behind UTC at a given instant (300=CDT, 360=CST)
+function centralOffsetMin(ts){
+  const d=new Date(ts);
+  const utc=new Date(d.toLocaleString('en-US',{timeZone:'UTC'}));
+  const ct=new Date(d.toLocaleString('en-US',{timeZone:TZ}));
+  return Math.round((utc-ct)/60000);
+}
+// epoch ms of Central wall-clock midnight, `daysAgo` days before today
+function centralDayStart(daysAgo){
+  const [y,mo,d]=new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()).split('-').map(Number);
+  const utcMidnight=Date.UTC(y,mo-1,d-daysAgo);
+  return utcMidnight+centralOffsetMin(utcMidnight)*60000;
+}
+function windowStart(){
+  if(range==='all')return 0;
+  if(range==='today')return centralDayStart(0);
+  if(range==='7d')return centralDayStart(6);
+  if(range==='30d')return centralDayStart(29);
+  return 0;
+}
+
+/* ── FETCH ── */
+async function fetchPage(startAfterDate){
+  let url=`${API}/conversations/search?locationId=${GHL_LOCATION_ID}&limit=${PAGE_LIMIT}&sortBy=last_message_date&sort=desc`;
+  if(startAfterDate)url+=`&startAfterDate=${startAfterDate}`;
+  const res=await fetch(url,{headers:HEADERS});
+  if(!res.ok)throw new Error(`GHL ${res.status} ${res.statusText}`);
+  return res.json();
+}
+
+async function loadData(reset){
+  if(polling)return;
+  polling=true;
+  if(reset){convMap={};}
+  const firstLoad=!all.length;
+  if(firstLoad){$('overlay').style.display='flex';$('sp').style.display='block';$('eb').style.display='none';$('st').style.display='block';}
+  try{
+    const floor=windowStart();
+    let cursor=null,pages=0,fetched=0;
+    while(pages<MAX_PAGES){
+      const data=await fetchPage(cursor);
+      const list=data.conversations||[];
+      if(!list.length)break;
+      // keep only SMS-capable threads (phone conversations)
+      list.forEach(c=>{convMap[c.id]=c;fetched++;});
+      pages++;
+      const oldest=list[list.length-1];
+      const oldestTs=oldest.lastMessageDate||(oldest.sort&&oldest.sort[0])||0;
+      cursor=oldest.sort&&oldest.sort[0];
+      if(oldestTs<floor)break;          // covered the window
+      if(list.length<PAGE_LIMIT)break;  // no more pages
+      if(!cursor)break;
+    }
+    all=Object.values(convMap);
+    $('overlay').style.display='none';
+    $('dash').style.display='block';
+    $('lu').textContent='Updated '+new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
+    render();
+  }catch(e){
+    if(firstLoad){$('sp').style.display='none';$('st').style.display='none';$('eb').style.display='block';$('em').textContent='Error: '+e.message;}
+    else{$('lu').textContent='⚠ refresh failed';}
+  }finally{
+    polling=false;
+  }
+}
+
+/* ── RENDER (KPIs + charts + table for window) ── */
+function inWindow(c){const ts=c.lastMessageDate||0;return ts>=windowStart();}
+
+function render(){
+  const rows=all.filter(inWindow);
+  updateKPIs(rows);
+  buildCharts(rows);
+  applyFilters();
+}
+
+function updateKPIs(rows){
+  const conv=rows.length;
+  const replied=rows.filter(isInbound).length;
+  const awaiting=rows.filter(c=>(c.lastMessageDirection||'').toLowerCase()==='outbound').length;
+  const unread=rows.reduce((a,c)=>a+(c.unreadCount||0),0);
+  const rr=conv?Math.round(replied/conv*100):0;
+  const today=toISODay(Date.now());
+  const inToday=rows.filter(c=>isInbound(c)&&toISODay(c.lastMessageDate)===today).length;
+  const tagHas=(c,t)=>(c.tags||[]).some(x=>x.toLowerCase().includes(t));
+  const interested=rows.filter(c=>tagHas(c,'interested')).length;
+  const dnc=rows.filter(c=>tagHas(c,'dnc')).length;
+
+  $('kConv').textContent=conv.toLocaleString();
+  $('kReplied').textContent=replied.toLocaleString();
+  $('kRR').textContent=rr+'%';
+  $('kRRb').innerHTML=rr>=40?'<span class="badge good">Strong</span>':rr>=20?'<span class="badge warn">Avg</span>':'<span class="badge bad">Low</span>';
+  $('kAwait').textContent=awaiting.toLocaleString();
+  $('kUnread').textContent=unread.toLocaleString();
+  $('kInToday').textContent=inToday.toLocaleString();
+  $('kInterested').textContent=interested.toLocaleString();
+  $('kDNC').textContent=dnc.toLocaleString();
+
+  $('noDataMsg').style.display=conv?'none':'flex';
+}
+
+/* ── CHARTS ── */
+function destroy(k){if(charts[k]){charts[k].destroy();delete charts[k];}}
+const CHART_DEFAULTS={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}}};
+
+function buildCharts(rows){
+  // Direction donut
+  destroy('cDir');
+  const inb=rows.filter(isInbound).length, out=rows.length-inb;
+  charts.cDir=new Chart($('cDir'),{type:'doughnut',data:{labels:['Lead replied (inbound)','We texted (outbound)'],datasets:[{data:[inb,out],backgroundColor:['#22c55e','#3b82f6'],borderWidth:0}]},options:{...CHART_DEFAULTS,cutout:'62%'}});
+
+  // Read vs unread
+  destroy('cRead');
+  const unreadC=rows.filter(c=>(c.unreadCount||0)>0).length, readC=rows.length-unreadC;
+  charts.cRead=new Chart($('cRead'),{type:'doughnut',data:{labels:['Unread','Read'],datasets:[{data:[unreadC,readC],backgroundColor:['#ef4444','#334155'],borderWidth:0}]},options:{...CHART_DEFAULTS,cutout:'62%'}});
+
+  // Daily volume
+  destroy('cDaily');
+  const days={};
+  rows.forEach(c=>{const d=toISODay(c.lastMessageDate);if(!d)return;days[d]=(days[d]||0)+1;});
+  const dk=Object.keys(days).sort();
+  charts.cDaily=new Chart($('cDaily'),{type:'bar',data:{labels:dk.map(d=>d.slice(5)),datasets:[{label:'Conversations',data:dk.map(d=>days[d]),backgroundColor:'#3b82f6',borderRadius:4}]},options:{...CHART_DEFAULTS,scales:axes()}});
+
+  // Hourly
+  destroy('cHourly');
+  const hrs=Array(24).fill(0);
+  rows.forEach(c=>{const h=getHr(c.lastMessageDate);if(h!=null)hrs[h]++;});
+  charts.cHourly=new Chart($('cHourly'),{type:'bar',data:{labels:hrs.map((_,h)=>`${h}:00`),datasets:[{label:'Activity',data:hrs,backgroundColor:'#06b6d4',borderRadius:4}]},options:{...CHART_DEFAULTS,scales:axes()}});
+
+  // Tags
+  destroy('cTags');
+  const tagCount={};
+  rows.forEach(c=>(c.tags||[]).forEach(t=>{tagCount[t]=(tagCount[t]||0)+1;}));
+  const topTags=Object.entries(tagCount).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  charts.cTags=new Chart($('cTags'),{type:'bar',data:{labels:topTags.map(t=>t[0]),datasets:[{label:'Conversations',data:topTags.map(t=>t[1]),backgroundColor:'#a855f7',borderRadius:4}]},options:{...CHART_DEFAULTS,indexAxis:'y',scales:axes()}});
+}
+function axes(){return{x:{ticks:{color:'#94a3b8',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}}};}
+
+/* ── TABLE ── */
+function applyFilters(){
+  const dir=$('fDir').value, unread=$('fUnread').value, q=$('fQ').value.trim().toLowerCase();
+  filtered=all.filter(inWindow).filter(c=>{
+    if(dir&&(c.lastMessageDirection||'').toLowerCase()!==dir)return false;
+    if(unread==='unread'&&!(c.unreadCount>0))return false;
+    if(q){const hay=`${displayName(c)} ${c.phone||''} ${c.email||''}`.toLowerCase();if(!hay.includes(q))return false;}
+    return true;
+  });
+  sortRows();
+  page=1;
+  renderTable();
+}
+function sortRows(){
+  filtered.sort((a,b)=>{
+    let av=a[sField],bv=b[sField];
+    if(sField==='contactName'){av=displayName(a).toLowerCase();bv=displayName(b).toLowerCase();}
+    if(sField==='phone'){av=a.phone||'';bv=b.phone||'';}
+    if(av<bv)return -1*sDir;if(av>bv)return 1*sDir;return 0;
+  });
+}
+function sortBy(f){if(sField===f)sDir*=-1;else{sField=f;sDir=-1;}sortRows();renderTable();updateSortArrows();}
+function updateSortArrows(){document.querySelectorAll('thead th').forEach(th=>th.classList.remove('sa','sd'));}
+
+function tagSpan(t){
+  const l=t.toLowerCase();let cls='';
+  if(l.includes('dnc'))cls='dnc';else if(l.includes('interested')||l.includes('appoint'))cls=l.includes('appoint')?'appt':'interested';else if(l.includes('dna'))cls='dna';
+  return `<span class="tag ${cls}">${esc(t)}</span>`;
+}
+
+function renderTable(){
+  const tbody=$('tbody');
+  $('rCount').textContent=`${filtered.length} conversation${filtered.length!==1?'s':''}`;
+  if(!filtered.length){tbody.innerHTML=`<tr class="empty"><td colspan="7">No conversations match these filters.</td></tr>`;renderPag();return;}
+  const start=(page-1)*pgSz, slice=filtered.slice(start,start+pgSz);
+  const frag=document.createDocumentFragment();
+  slice.forEach(c=>{
+    const tr=document.createElement('tr');
+    tr.className=isInbound(c)?'din':'dout';
+    tr.onclick=()=>openThread(c);
+    const tags=(c.tags||[]).slice(0,3).map(tagSpan).join('')+((c.tags||[]).length>3?`<span class="tag">+${c.tags.length-3}</span>`:'');
+    tr.innerHTML=`
+      <td style="white-space:nowrap">${fmtDT(c.lastMessageDate)}</td>
+      <td>${esc(displayName(c))}</td>
+      <td style="font-family:monospace;font-size:.72rem">${esc(c.phone||'—')}</td>
+      <td>${isInbound(c)?'<span class="db di">IN</span>':'<span class="db do">OUT</span>'}</td>
+      <td><div class="snip">${esc(c.lastMessageBody||'—')}</div></td>
+      <td>${tags||'—'}</td>
+      <td style="text-align:center">${c.unreadCount>0?`<span class="unread">${c.unreadCount}</span>`:'—'}</td>`;
+    frag.appendChild(tr);
+  });
+  tbody.innerHTML='';tbody.appendChild(frag);
+  renderPag();
+}
+function renderPag(){
+  const pages=Math.max(1,Math.ceil(filtered.length/pgSz));
+  if(page>pages)page=pages;
+  const start=filtered.length?(page-1)*pgSz+1:0, end=Math.min(page*pgSz,filtered.length);
+  $('pi').textContent=`${start}–${end} of ${filtered.length}`;
+  const btns=$('pgbtns');btns.innerHTML='';
+  const mk=(label,p,dis,on)=>{const b=document.createElement('button');b.className='pb'+(on?' on':'');b.textContent=label;b.disabled=dis;b.onclick=()=>{page=p;renderTable();};return b;};
+  btns.appendChild(mk('‹',page-1,page<=1));
+  const win=[];for(let p=Math.max(1,page-2);p<=Math.min(pages,page+2);p++)win.push(p);
+  win.forEach(p=>btns.appendChild(mk(p,p,false,p===page)));
+  btns.appendChild(mk('›',page+1,page>=pages));
+}
+function chgPgSz(){pgSz=+$('psz').value;page=1;renderTable();}
+function clearFilters(){$('fDir').value='';$('fUnread').value='';$('fQ').value='';applyFilters();}
+
+/* ── THREAD MODAL ── */
+async function openThread(c){
+  activeConv=c;
+  $('mTitle').childNodes[0].nodeValue=`💬 ${displayName(c)} `;
+  $('mSub').textContent=`${c.phone||''}`;
+  $('modal').style.display='flex';
+  const body=$('mBody');
+  body.innerHTML=`<div class="thread-loading"><div class="spinner" style="width:26px;height:26px;border-width:3px"></div></div>`;
+  try{
+    const res=await fetch(`${API}/conversations/${c.id}/messages?limit=100`,{headers:HEADERS});
+    if(!res.ok)throw new Error(`GHL ${res.status}`);
+    const data=await res.json();
+    const msgs=((data.messages&&data.messages.messages)||[]).slice().reverse(); // oldest→newest
+    if(!msgs.length){body.innerHTML=`<div class="thread-loading">No messages in this thread.</div>`;return;}
+    body.innerHTML=msgs.map(m=>{
+      const inb=(m.direction||'').toLowerCase()==='inbound';
+      if((m.messageType||'')==='TYPE_CALL'){
+        return `<div class="bubble b-call">📞 ${inb?'Inbound':'Outbound'} call · ${esc(fmtTime(m.dateAdded))}</div>`;
+      }
+      const cls=inb?'b-in':'b-out';
+      const status=m.status?` · <span class="b-status">${esc(m.status)}</span>`:'';
+      return `<div class="bubble ${cls}">${esc(m.body||'(no text)')}<span class="meta">${esc(fmtTime(m.dateAdded))}${status}</span></div>`;
+    }).join('');
+    body.scrollTop=body.scrollHeight;
+  }catch(e){
+    body.innerHTML=`<div class="thread-loading">⚠ Could not load messages: ${esc(e.message)}</div>`;
+  }
+}
+function closeThread(){$('modal').style.display='none';activeConv=null;}
+
+async function openInGHL(btn){
+  if(!activeConv)return;
+  const url=`https://app.gohighlevel.com/v2/location/${GHL_LOCATION_ID}/contacts/detail/${activeConv.contactId}`;
+  window.open(url,'_blank');
+}
+
+/* ── RANGE / TABS ── */
+function setRange(r){
+  range=r;
+  document.querySelectorAll('#qr .pill').forEach(p=>p.classList.remove('on'));
+  event&&event.target&&event.target.classList.add('on');
+  loadData(true); // window changed → may need deeper pagination
+}
+function showTab(i){
+  document.querySelectorAll('.ctab').forEach((t,n)=>t.classList.toggle('on',n===i));
+  document.querySelectorAll('.chart-panel').forEach((p,n)=>p.classList.toggle('on',n===i));
+}
+
+/* ── COUNTDOWN + POLL ── */
+function tick(){
+  cdVal--;
+  if(cdVal<=0){cdVal=POLL_MS/1000;loadData(false);}
+  $('cd').textContent=cdVal+'s';
+}
+
+/* ── INIT ── */
+$('fDir').addEventListener('change',applyFilters);
+$('fUnread').addEventListener('change',applyFilters);
+$('fQ').addEventListener('input',dbn(applyFilters,250));
+loadData(true).then(()=>{cdVal=POLL_MS/1000;cdTimer=setInterval(tick,1000);});
+</script>
+</body>
+</html>
