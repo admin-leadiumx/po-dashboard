@@ -148,6 +148,39 @@
     .pb:disabled{opacity:.35;cursor:not-allowed}
     .empty td{text-align:center;color:var(--muted);padding:36px;font-size:.85rem}
 
+    /* ── Upcoming Calls Calendar ── */
+    .ucal-wrap{display:grid;grid-template-columns:auto 1fr;gap:0;margin-top:12px}
+    @media(max-width:640px){.ucal-wrap{grid-template-columns:1fr}}
+    .ucal-cal{background:#0f172a;border:1px solid #334155;border-radius:10px 0 0 10px;padding:14px;min-width:220px}
+    .ucal-list{background:rgba(255,255,255,.02);border:1px solid #334155;border-left:none;border-radius:0 10px 10px 0;padding:14px;min-height:200px}
+    @media(max-width:640px){.ucal-cal{border-radius:10px 10px 0 0}.ucal-list{border-left:1px solid #334155;border-top:none;border-radius:0 0 10px 10px}}
+    .ucal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .ucal-nav button{background:none;border:1px solid #334155;border-radius:5px;color:#94a3b8;width:24px;height:24px;cursor:pointer;font-size:.8rem;display:flex;align-items:center;justify-content:center;padding:0}
+    .ucal-nav button:hover{background:#1e293b;color:#f1f5f9}
+    .ucal-month{font-size:.8rem;font-weight:700;color:#f1f5f9}
+    .ucal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+    .ucal-dow{font-size:.55rem;color:#64748b;text-align:center;padding:2px 0;font-weight:600;text-transform:uppercase}
+    .ucal-day{font-size:.68rem;text-align:center;padding:3px 1px;border-radius:5px;cursor:pointer;color:#94a3b8;min-height:24px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:1px;line-height:1}
+    .ucal-day:hover{background:#1e293b;color:#f1f5f9}
+    .ucal-day.has-calls{color:#f1f5f9}
+    .ucal-day.today{background:#1e3a5f;color:#93c5fd;font-weight:700}
+    .ucal-day.selected{background:#1d4ed8;color:#fff;font-weight:700}
+    .ucal-day.selected.today{background:#1d4ed8}
+    .ucal-day.empty{cursor:default;pointer-events:none}
+    .ucal-dot{width:4px;height:4px;border-radius:50%;background:#22c55e;margin:0 auto}
+    .ucal-dot-many{background:#f59e0b}
+    .ucal-dot-zero{display:none}
+    .ucal-list-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+    .ucal-list-date{font-size:.85rem;font-weight:700;color:#f1f5f9}
+    .ucal-list-badge{font-size:.65rem;background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3);border-radius:20px;padding:2px 8px;font-weight:600}
+    .ucal-list-badge.zero{background:rgba(148,163,184,.1);color:#64748b;border-color:#334155}
+    .ucal-contact-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-top:1px solid #1e293b;font-size:.75rem}
+    .ucal-contact-name{color:#f1f5f9;font-weight:500;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .ucal-contact-phone{color:#64748b;font-family:monospace;font-size:.7rem}
+    .ucal-loading{color:#64748b;font-size:.75rem;padding:20px 0;text-align:center}
+    .ucal-empty{color:#64748b;font-size:.75rem;padding:20px 0;text-align:center}
+    .ucal-scroll{max-height:260px;overflow-y:auto}
+
     /* Section wrappers */
     .dash-section{background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:18px 20px;margin-bottom:16px}
     .dash-section-plain{padding:0;margin-bottom:0}
@@ -277,6 +310,26 @@
   <div class="comp-card" id="compCard" style="display:none;margin-top:12px">
     <div class="comp-title">🚨 DNC Compliance Violations — Calls made AFTER DNC result</div>
     <div id="compBody"></div>
+  </div>
+
+  <!-- Upcoming Calls Calendar -->
+  <div class="table-section" style="margin-top:12px" id="ucalSection">
+    <div class="sec" style="margin-top:0">📅 Upcoming Calls Schedule</div>
+    <div class="ucal-wrap">
+      <!-- Mini Calendar -->
+      <div class="ucal-cal">
+        <div class="ucal-nav">
+          <button onclick="ucalPrevMonth()" title="Previous month">‹</button>
+          <span class="ucal-month" id="ucalMonthLabel"></span>
+          <button onclick="ucalNextMonth()" title="Next month">›</button>
+        </div>
+        <div class="ucal-grid" id="ucalGrid"></div>
+      </div>
+      <!-- Contact List for selected day -->
+      <div class="ucal-list" id="ucalList">
+        <div class="ucal-loading">Loading upcoming calls…</div>
+      </div>
+    </div>
   </div>
 
   <!-- Charts (tabbed — only renders active tab) -->
@@ -970,6 +1023,182 @@ async function loadData(){
   }
 }
 
+/* ── UPCOMING CALLS CALENDAR ── */
+const UCAL_CF_ID = '7xqKA41PEYIoASYPwpOM'; // next_call_date GHL custom field
+let ucalYear, ucalMonth, ucalSelectedDate, ucalContacts = null, ucalLoading = false;
+
+function ucalTodayStr(){
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+}
+
+function ucalDateStr(y, m, d){
+  return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+
+function ucalInit(){
+  const today = new Date();
+  ucalYear = today.getFullYear();
+  ucalMonth = today.getMonth();
+  ucalSelectedDate = ucalTodayStr();
+  ucalContacts = null;
+  ucalFetchContacts().then(() => {
+    ucalRenderCalendar();
+    ucalRenderList();
+  });
+}
+
+async function ucalFetchContacts(){
+  if(ucalLoading) return;
+  ucalLoading = true;
+  $('ucalList').innerHTML = '<div class="ucal-loading">⏳ Fetching contacts from GHL…</div>';
+  try {
+    // Fetch all contacts with next_call_date set — paginate up to 500
+    let all_contacts = [];
+    let cursor = null;
+    let page = 1;
+    while(page <= 5){ // max 500 contacts
+      let url = `https://services.leadconnectorhq.com/contacts/?locationId=${GHL_LOCATION_ID}&limit=100`;
+      if(cursor) url += `&startAfter=${cursor}`;
+      const res = await fetch(url, {
+        headers:{'Authorization':`Bearer ${GHL_API_KEY}`,'Version':'2021-07-28'}
+      });
+      if(!res.ok) break;
+      const data = await res.json();
+      const contacts = data.contacts || [];
+      if(!contacts.length) break;
+      all_contacts = all_contacts.concat(contacts);
+      if(contacts.length < 100) break;
+      cursor = contacts.at(-1).id;
+      page++;
+    }
+    // Filter to contacts with UCAL_CF_ID set
+    ucalContacts = [];
+    for(const c of all_contacts){
+      const cfs = c.customFields || [];
+      const cf = cfs.find(f => f.id === UCAL_CF_ID);
+      if(!cf || !cf.value) continue;
+      // value is YYYY-MM-DD or ms timestamp
+      let dateStr = '';
+      const raw = String(cf.value);
+      if(/^\d{4}-\d{2}-\d{2}/.test(raw)){
+        dateStr = raw.substring(0,10);
+      } else if(/^\d{10,13}$/.test(raw)){
+        const ms = raw.length === 13 ? +raw : +raw * 1000;
+        const d = new Date(ms);
+        if(!isNaN(d)) dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      } else if(/^\d{4}-\d{2}-\d{2}T/.test(raw)){
+        dateStr = raw.substring(0,10);
+      }
+      if(!dateStr) continue;
+      const name = [c.firstName||'', c.lastName||''].join(' ').trim() || '(no name)';
+      const phone = c.phone || '';
+      ucalContacts.push({ dateStr, name, phone, id: c.id });
+    }
+  } catch(e){
+    $('ucalList').innerHTML = `<div class="ucal-empty">⚠ Could not fetch GHL contacts: ${esc(e.message||String(e))}</div>`;
+  }
+  ucalLoading = false;
+}
+
+function ucalContactsByDate(){
+  if(!ucalContacts) return {};
+  const map = {};
+  for(const c of ucalContacts){
+    if(!map[c.dateStr]) map[c.dateStr] = [];
+    map[c.dateStr].push(c);
+  }
+  return map;
+}
+
+function ucalRenderCalendar(){
+  const map = ucalContactsByDate();
+  const todayStr = ucalTodayStr();
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  $('ucalMonthLabel').textContent = `${months[ucalMonth]} ${ucalYear}`;
+
+  const firstDay = new Date(ucalYear, ucalMonth, 1).getDay(); // 0=Sun
+  const daysInMonth = new Date(ucalYear, ucalMonth+1, 0).getDate();
+
+  let html = '';
+  // Day of week headers
+  ['Su','Mo','Tu','We','Th','Fr','Sa'].forEach(d => {
+    html += `<div class="ucal-dow">${d}</div>`;
+  });
+  // Empty cells before first day
+  for(let i=0; i<firstDay; i++) html += `<div class="ucal-day empty"></div>`;
+  // Days
+  for(let d=1; d<=daysInMonth; d++){
+    const ds = ucalDateStr(ucalYear, ucalMonth, d);
+    const count = (map[ds] || []).length;
+    const isToday = ds === todayStr;
+    const isSel = ds === ucalSelectedDate;
+    let cls = 'ucal-day';
+    if(count > 0) cls += ' has-calls';
+    if(isToday) cls += ' today';
+    if(isSel) cls += ' selected';
+    const dot = count > 0 ? `<div class="ucal-dot${count > 5 ? ' ucal-dot-many' : ''}"></div>` : '';
+    html += `<div class="${cls}" onclick="ucalSelectDay('${ds}')">${d}${dot}</div>`;
+  }
+  $('ucalGrid').innerHTML = html;
+}
+
+function ucalRenderList(){
+  const map = ucalContactsByDate();
+  const contacts = map[ucalSelectedDate] || [];
+  const todayStr = ucalTodayStr();
+  const isToday = ucalSelectedDate === todayStr;
+
+  // Format display date
+  const [y,m,d] = ucalSelectedDate.split('-').map(Number);
+  const dateObj = new Date(y, m-1, d);
+  const label = dateObj.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
+
+  const badgeCls = contacts.length === 0 ? 'zero' : '';
+  const badgeTxt = contacts.length === 0
+    ? '0 calls scheduled'
+    : `${contacts.length} call${contacts.length!==1?'s':''} scheduled`;
+
+  let html = `<div class="ucal-list-head">
+    <span class="ucal-list-date">${isToday ? '📅 Today — ' : ''}${label}</span>
+    <span class="ucal-list-badge ${badgeCls}">${badgeTxt}</span>
+  </div>`;
+
+  if(ucalLoading){
+    html += '<div class="ucal-loading">⏳ Loading…</div>';
+  } else if(contacts.length === 0){
+    html += '<div class="ucal-empty">No calls scheduled for this day.</div>';
+  } else {
+    html += '<div class="ucal-scroll">';
+    contacts.forEach(c => {
+      html += `<div class="ucal-contact-row">
+        <span class="ucal-contact-name" title="${esc(c.name)}">${esc(c.name)}</span>
+        <span class="ucal-contact-phone">${esc(c.phone)}</span>
+      </div>`;
+    });
+    html += '</div>';
+  }
+  $('ucalList').innerHTML = html;
+}
+
+function ucalSelectDay(ds){
+  ucalSelectedDate = ds;
+  ucalRenderCalendar();
+  ucalRenderList();
+}
+
+function ucalPrevMonth(){
+  ucalMonth--;
+  if(ucalMonth < 0){ ucalMonth = 11; ucalYear--; }
+  ucalRenderCalendar();
+}
+
+function ucalNextMonth(){
+  ucalMonth++;
+  if(ucalMonth > 11){ ucalMonth = 0; ucalYear++; }
+  ucalRenderCalendar();
+}
+
 /* ── COUNTDOWN ── */
 function startCD(){
   clearInterval(cdTimer);cdVal=60;$('cd').textContent='60s';
@@ -1006,6 +1235,8 @@ loadData().then(()=>{
   renderTable();
   renderLeads(globalRows);
   requestAnimationFrame(()=>buildTab(0,globalRows));
+  // Init calendar after data loads
+  ucalInit();
 });
 </script>
 </body>
