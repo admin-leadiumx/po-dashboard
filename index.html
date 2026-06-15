@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>Persistent Offer — AI Call Dashboard</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net"/>
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -429,8 +428,8 @@
 
 <script>
 /* ── CONFIG ── */
-const SHEET_ID='1ngIe_4lZPgIWQSsP_BzjNKWG1yU3MN84EGvjTDMFCcU';
-const CSV_URL=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`;
+const SUPA_URL='https://snmhfybbeicyhnplrnmw.supabase.co';
+const ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNubWhmeWJiZWljeWhucGxybm13Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3NDc3NzQsImV4cCI6MjA4ODMyMzc3NH0.kwoUxX8VjcVem2OLxlOUfc5NHMQZG8DkzZjACGLW0Ig';
 const TZ='America/Chicago';
 const WASTED_THRESH=5;
 
@@ -954,9 +953,11 @@ async function loadData(){
   Chart.defaults.color='#94a3b8';Chart.defaults.borderColor='#334155';Chart.defaults.font.family="'Segoe UI',system-ui,sans-serif";
   showLoad();
   try{
-    const result=await new Promise((res,rej)=>Papa.parse(CSV_URL,{download:true,header:true,skipEmptyLines:true,complete:res,error:rej}));
-    if(!result?.data?.length){showErr('Sheet returned no rows. Make sure it is published publicly.');return;}
-    all=result.data.map(row=>{const n={};Object.keys(row).forEach(k=>{n[k.trim().toLowerCase()]=(row[k]||'').trim();});return n;});
+    const res=await fetch(`${SUPA_URL}/rest/v1/po_call_logs?select=*&order=date.desc&limit=5000`,{headers:{apikey:ANON_KEY,Authorization:`Bearer ${ANON_KEY}`}});
+    if(!res.ok){showErr('Supabase error: '+res.status+' '+res.statusText);return;}
+    const data=await res.json();
+    if(!data?.length){showErr('No rows returned from Supabase.');return;}
+    all=data.map(row=>{const n={};Object.keys(row).forEach(k=>{n[k]=(row[k]==null?'':String(row[k]));});return n;});
     all.sort((a,b)=>{const da=new Date(a.date),db=new Date(b.date);return(isNaN(da)?0:da)>(isNaN(db)?0:db)?-1:1;});
     chartBuilt={};
     globalRows=[...all];
@@ -965,7 +966,7 @@ async function loadData(){
     // setRange('today') called at boot handles all rendering
   }catch(err){
     const m=err?.message||String(err);
-    showErr(m.includes('NetworkError')||m.includes('fetch')||m.includes('CORS')?'Network error — sheet may not be public.':'Error: '+m);
+    showErr(m.includes('NetworkError')||m.includes('fetch')?'Network error — check Supabase connection.':'Error: '+m);
   }
 }
 
